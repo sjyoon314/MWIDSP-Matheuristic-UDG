@@ -1,0 +1,30 @@
+========== Gurobi Exact Solver Performance Comparison (gurobi_new2_baseline vs gurobi_warm_ensemble) ==========
+
+[EG (Edge-oriented)]
+  - Avg Best Objective: gurobi_new2_baseline 112327.7 vs gurobi_warm_ensemble 112146.2 (gurobi_warm_ensemble Wins)
+  - Record (gurobi_warm_ensemble perspective): 9 Wins, 0 Ties, 1 Losses
+  - Objective Diff: Reduced by 0.16% (Improved)
+  - Avg MIP Gap: gurobi_new2_baseline 12.49% vs gurobi_warm_ensemble 12.40%
+  - Avg Time: gurobi_new2_baseline 1500.1s vs gurobi_warm_ensemble 1500.4s
+
+[NG (Neutral)]
+  - Avg Best Objective: gurobi_new2_baseline 13367.0 vs gurobi_warm_ensemble 13382.9 (gurobi_new2_baseline Wins)
+  - Record (gurobi_warm_ensemble perspective): 4 Wins, 0 Ties, 6 Losses
+  - Objective Diff: Increased by 0.12% (Degraded)
+  - Avg MIP Gap: gurobi_new2_baseline 9.14% vs gurobi_warm_ensemble 9.34%
+  - Avg Time: gurobi_new2_baseline 1500.4s vs gurobi_warm_ensemble 1500.4s
+
+[VG (Node-oriented)]
+  - Avg Best Objective: gurobi_new2_baseline 4758.6 vs gurobi_warm_ensemble 4758.6 (Tie in Objective, evaluated by time)
+  - Record (gurobi_warm_ensemble perspective): 0 Wins, 0 Ties, 10 Losses
+  - Objective Diff: No change (0.00%)
+  - Avg MIP Gap: gurobi_new2_baseline 0.00% vs gurobi_warm_ensemble 0.00%
+  - Avg Time: gurobi_new2_baseline 0.8s vs gurobi_warm_ensemble 153.0s
+
+[Overall Average]
+  - Avg Best Objective: gurobi_new2_baseline 43484.4 vs gurobi_warm_ensemble 43429.2
+  - Total Record: 13 Wins, 0 Ties, 17 Losses
+  - Total Objective Diff: Reduced by 0.13% (Improved)
+  - Total Avg MIP Gap: gurobi_new2_baseline 7.21% vs gurobi_warm_ensemble 7.25%
+  - Total Avg Time: gurobi_new2_baseline 1000.4s vs gurobi_warm_ensemble 1051.3s
+=================================================================

@@ -1,0 +1,26 @@
+========== Heuristics Performance Comparison (grasp_baseline_1500s vs sa_smart) ==========
+
+[EG (Edge-oriented)]
+  - Avg Cost: grasp_baseline_1500s 124177.0 vs sa_smart 120114.7 (sa_smart Wins)
+  - Record (sa_smart perspective): 7 Wins, 0 Ties, 3 Losses
+  - Cost Diff: Reduced by 3.27% (Improved)
+  - Avg Time: grasp_baseline_1500s 1500.0356s vs sa_smart 1500.0089s
+
+[NG (Neutral)]
+  - Avg Cost: grasp_baseline_1500s 14583.2 vs sa_smart 14503.6 (sa_smart Wins)
+  - Record (sa_smart perspective): 6 Wins, 0 Ties, 4 Losses
+  - Cost Diff: Reduced by 0.55% (Improved)
+  - Avg Time: grasp_baseline_1500s 1500.0480s vs sa_smart 1500.0113s
+
+[VG (Node-oriented)]
+  - Avg Cost: grasp_baseline_1500s 5425.4 vs sa_smart 7721.7 (grasp_baseline_1500s Wins)
+  - Record (sa_smart perspective): 0 Wins, 0 Ties, 10 Losses
+  - Cost Diff: Increased by 42.32% (Degraded)
+  - Avg Time: grasp_baseline_1500s 1500.0499s vs sa_smart 1500.0106s
+
+[Overall Average]
+  - Avg Cost: grasp_baseline_1500s 48061.9 vs sa_smart 47446.7
+  - Total Record: 13 Wins, 0 Ties, 17 Losses
+  - Total Cost Diff: Reduced by 1.28% (Improved)
+  - Total Avg Time: grasp_baseline_1500s 1500.0445s vs sa_smart 1500.0102s
+=================================================================

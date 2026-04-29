@@ -1,0 +1,26 @@
+========== Heuristics Performance Comparison (grasp_baseline_1500s vs ensemble_shift_full) ==========
+
+[EG (Edge-oriented)]
+  - Avg Cost: grasp_baseline_1500s 124177.0 vs ensemble_shift_full 125119.3 (grasp_baseline_1500s Wins)
+  - Record (ensemble_shift_full perspective): 4 Wins, 0 Ties, 6 Losses
+  - Cost Diff: Increased by 0.76% (Degraded)
+  - Avg Time: grasp_baseline_1500s 1500.0356s vs ensemble_shift_full 152.4450s
+
+[NG (Neutral)]
+  - Avg Cost: grasp_baseline_1500s 14583.2 vs ensemble_shift_full 14590.0 (grasp_baseline_1500s Wins)
+  - Record (ensemble_shift_full perspective): 5 Wins, 0 Ties, 5 Losses
+  - Cost Diff: Increased by 0.05% (Degraded)
+  - Avg Time: grasp_baseline_1500s 1500.0480s vs ensemble_shift_full 145.8943s
+
+[VG (Node-oriented)]
+  - Avg Cost: grasp_baseline_1500s 5425.4 vs ensemble_shift_full 5006.5 (ensemble_shift_full Wins)
+  - Record (ensemble_shift_full perspective): 10 Wins, 0 Ties, 0 Losses
+  - Cost Diff: Reduced by 7.72% (Improved)
+  - Avg Time: grasp_baseline_1500s 1500.0499s vs ensemble_shift_full 148.7116s
+
+[Overall Average]
+  - Avg Cost: grasp_baseline_1500s 48061.9 vs ensemble_shift_full 48238.6
+  - Total Record: 19 Wins, 0 Ties, 11 Losses
+  - Total Cost Diff: Increased by 0.37% (Degraded)
+  - Total Avg Time: grasp_baseline_1500s 1500.0445s vs ensemble_shift_full 149.0170s
+=================================================================
