@@ -39,11 +39,11 @@ def format_gap(gap_pct):
 
 def compare_and_plot():
     # 1. Set file paths to compare (Heuristic 1 vs Heuristic 2)
-    file_1 = './results/500_r0c14_grasp_baseline_1500s_results.csv' 
-    file_2 = './results/500_r0c14_ensemble_shift_full_results.csv'
+    file_1 = '../results/500_r0c14_ensemble_shift_full_results.csv' 
+    file_2 = '../results/500_r0c14_shift_ls_results.csv'
 
     # Set save directory using a relative path
-    save_dir = './results/compare'
+    save_dir = '../results/compare'
     os.makedirs(save_dir, exist_ok=True)
 
     name1 = get_algo_name(file_1)

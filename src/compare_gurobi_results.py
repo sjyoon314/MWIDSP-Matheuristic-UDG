@@ -43,7 +43,7 @@ def compare_gurobi_and_plot():
     file_2 = './results/500_r0c14_gurobi_warm_ensemble_results.csv'
 
     # Set save directory
-    save_dir = './results/compare'
+    save_dir = '../results/compare'
     os.makedirs(save_dir, exist_ok=True)
 
     name1 = get_algo_name(file_1)
