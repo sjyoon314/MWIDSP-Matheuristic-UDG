@@ -6,6 +6,7 @@ into a purely topological Packing-Constrained Set Cover problem by omitting rout
 
 import os
 import random
+random.seed(42)
 from time import perf_counter
 from argparse import ArgumentParser
 import networkx as nx
@@ -162,9 +163,9 @@ def solve_all_lp_rounding(in_dir_path, instances_subset, out_dir_path):
             for line in lines[1:]: # Skip header
                 if line.strip():
                     processed.add(line.split(',')[0].strip())
-    
+
     for file_name in sorted(os.listdir(in_dir_path)):
-        if file_name.startswith(instances_subset):
+        if file_name.startswith(f"{instances_subset}_"):
             if file_name in processed:
                 print(f"[{file_name}] Already processed. Skipping.")
                 continue

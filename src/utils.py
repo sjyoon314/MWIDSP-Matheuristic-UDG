@@ -30,6 +30,32 @@ def calc_initial_solution_cost(solution, g):
     total_cost = sum_node_weights + external_edge_weights
     return num_incorrect, total_cost, sorted_external_edges, sorted_out_edges
 
+def calc_initial_solution_cost_fast(S, G):
+    cost = sum(G.nodes[v]['weight'] for v in S)
+    num_incorrect = 0
+    
+    nodes = G.nodes
+    adj = G._adj 
+    
+    min_edge = {u: float('inf') for u in nodes}
+    
+    for v in S:
+        min_edge[v] = 0
+        for u, e_dict in adj[v].items():
+            w = e_dict['weight']
+            if w < min_edge[u]:
+                min_edge[u] = w
+                
+    for u in nodes:
+        if u not in S:
+            w = min_edge[u]
+            if w == float('inf'):
+                num_incorrect += 1
+            else:
+                cost += w
+                
+    return num_incorrect, cost, None, None
+
 def read_line_of_ints(f):
     xs = [int(x) for x in f.readline().split()]
     if len(xs) == 1:

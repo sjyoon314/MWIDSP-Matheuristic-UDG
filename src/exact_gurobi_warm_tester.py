@@ -13,11 +13,20 @@ import gurobipy as gp
 from gurobipy import GRB
 
 # Ensure the newly renamed heuristic files are available in the same directory
-from heuristic_competitive_ensemble import read_instance_with_pos, shift_full_heuristic, lp_rounding_heuristic_pool
+from heuristic_grid_ensemble import read_instance_with_pos, shift_full_heuristic, lp_rounding_heuristic_pool
 from metaheuristic_sa_smart import simulated_annealing_smart
 from metaheuristic_grasp import grasp_baseline_heuristic
 
-def solve_with_gurobi_warm_tester(G, instance_name, warm_method, total_time_limit=1800.0):
+def extract_weights(G):
+    w_node = {u: G.nodes[u]['weight'] for u in G.nodes()}
+    w_edge = {}
+    for u, v in G.edges():
+        weight = G[u][v]['weight']
+        w_edge[u, v] = weight
+        w_edge[v, u] = weight
+    return w_node, w_edge
+
+def solve_with_gurobi_warm_tester(G, instance_name, warm_method, total_time_limit=1500.0):
     start_time = perf_counter()
     
     print(f"\n[{instance_name}] Phase 1: Collecting Initial Solutions via [{warm_method}]...")
@@ -79,60 +88,62 @@ def solve_with_gurobi_warm_tester(G, instance_name, warm_method, total_time_limi
     env.start()
     
     m = gp.Model(f"MWIDSP_{warm_method}", env=env)
+
     m.setParam('TimeLimit', gurobi_time_limit)
-    m.setParam('MIPFocus', 1) 
+
     
-    x = {}
-    for i in G.nodes():
-        x[i] = m.addVar(vtype=GRB.BINARY, name=f"x_{i}")
-        
-    y = {}
-    for u in G.nodes():
-        for v in G.neighbors(u):
-            y[u, v] = m.addVar(vtype=GRB.BINARY, name=f"y_{u}_{v}")
-            
-    obj_node = gp.quicksum(G.nodes[i]['weight'] * x[i] for i in G.nodes())
-    obj_edge = gp.quicksum(G[u][v]['weight'] * y[u, v] for u in G.nodes() for v in G.neighbors(u))
-    m.setObjective(obj_node + obj_edge, GRB.MINIMIZE)
+    w_node, w_edge = extract_weights(G)
+    x = m.addVars(G.nodes(), vtype=GRB.BINARY, name="x")
+    q = m.addVars(G.nodes(), vtype=GRB.CONTINUOUS, lb=0.0, name="q")
     
-    for u in G.nodes():
-        m.addConstr(x[u] + gp.quicksum(y[u, v] for v in G.neighbors(u)) >= 1, name=f"cov_{u}")
-        for v in G.neighbors(u):
-            m.addConstr(y[u, v] <= x[v], name=f"val_{u}_{v}")
-            
-    covered_edges = set()
+    m.setObjective(
+        gp.quicksum(w_node[u] * x[u] + q[u] for u in G.nodes()),
+        GRB.MINIMIZE
+    )
+    
+    # 2. NEW2 제약식 (Edge-packing, Set Partitioning, Objective Cuts)
     for u, v in G.edges():
-        if (u, v) not in covered_edges and (v, u) not in covered_edges:
-            m.addConstr(x[u] + x[v] <= 1, name=f"ind_{u}_{v}")
-            covered_edges.add((u, v))
-            covered_edges.add((v, u))
+        m.addConstr(x[u] + x[v] <= 1, name=f"Indep_{u}_{v}")
         
-    # 4. Inject Multiple MIP Starts
+    for u in G.nodes():
+        neighbors = list(G.neighbors(u))
+        m.addConstr(x[u] + gp.quicksum(x[v] for v in neighbors) >= 1, name=f"Dom_{u}")
+        
+        N_prime = sorted(neighbors, key=lambda v: w_edge[v, u])
+        for s_idx, s_node in enumerate(N_prime):
+            w_su = w_edge[s_node, u]
+            sum_t = gp.quicksum(
+                (w_su - w_edge[N_prime[t_idx], u]) * x[N_prime[t_idx]]
+                for t_idx in range(s_idx)
+            )
+            m.addConstr(q[u] >= w_su - sum_t - w_su * x[u], name=f"Cut_{u}_{s_node}")
+
+    m.update() # 변수와 제약식 동기화 필수
+
+    # 3. 웜스타트 (Multiple MIP Starts) 주입 로직 변경
     m.NumStart = len(solution_pool)
-    
     for idx, S_cand in enumerate(solution_pool):
         m.setParam('StartNumber', idx)
         
         for v in G.nodes():
             x[v].Start = 1.0 if v in S_cand else 0.0
             
+        # NEW2에서는 y 변수가 없으므로, q 변수의 초기값을 계산해서 넣어줍니다.
         for u in G.nodes():
-            if u not in S_cand:
+            if u in S_cand:
+                q[u].Start = 0.0
+            else:
                 valid_neighbors = [v for v in G.neighbors(u) if v in S_cand]
                 if valid_neighbors:
-                    best_v = min(valid_neighbors, key=lambda v: G[u][v]['weight'])
-                    for v in G.neighbors(u):
-                        y[u, v].Start = 1.0 if v == best_v else 0.0
+                    best_v = min(valid_neighbors, key=lambda v: w_edge[u, v])
+                    q[u].Start = w_edge[u, best_v]
                 else:
-                    for v in G.neighbors(u):
-                        y[u, v].Start = 0.0
-            else:
-                for v in G.neighbors(u):
-                    y[u, v].Start = 0.0
-                    
-    print(f"  - [MIP Start] Injection Complete: {len(solution_pool)} diverse solution(s) injected.")
-    
+                    q[u].Start = float('inf') # 웜스타트가 Infeasible한 경우 대비 (이론상 발생 안함)
+
+    print(f"  - [MIP Start] Injection Complete: {len(solution_pool)} diverse solution(s) injected into NEW2 base.")
+    m.setParam('StartNumber', 0)
     print(f"  - Initiating Gurobi search (Solver Time Limit: {gurobi_time_limit:.2f}s)...\n")
+    
     m.optimize()
     
     # 5. Extract results
@@ -173,9 +184,9 @@ def run_warm_test_pipeline(in_dir_path, instances_subset, out_dir_path, warm_met
             for line in lines[1:]:
                 if line.strip():
                     processed.add(line.split(',')[0].strip())
-                
+
     for file_name in sorted(os.listdir(in_dir_path)):
-        if file_name.startswith(instances_subset):
+        if file_name.startswith(f"{instances_subset}_"):
             if file_name in processed:
                 print(f"[{file_name}] Already processed. Skipping.")
                 continue
@@ -195,7 +206,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--instances_subset', type=str, required=True, help="Instance prefix to process")
     parser.add_argument('-o', '--out_dir_path', type=str, required=True, help="Output directory path")
     parser.add_argument('-w', '--warm_method', type=str, choices=['shift_full', 'sa_smart', 'grasp', 'lp_rounding', 'ensemble'], required=True, help="Select heuristic for warm-start")
-    parser.add_argument('-t', '--time_limit', type=float, default=1800.0, help="Total Time Limit (Heuristic + Gurobi)")
+    parser.add_argument('-t', '--time_limit', type=float, default=1500.0, help="Total Time Limit (Heuristic + Gurobi)")
     args = parser.parse_args()
     
     run_warm_test_pipeline(args.in_dir_path, args.instances_subset, args.out_dir_path, args.warm_method, args.time_limit)

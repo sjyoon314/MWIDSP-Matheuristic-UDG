@@ -1,0 +1,184 @@
+
+========================================
+NEW RUN STARTED: fixed_radius - 5000
+========================================
+
+--- Instance: 5000_r0c14_nw1000_ew10_0.rgg ---
+  - Strategy [size        ] -> Cost: 20838.00
+  - Strategy [cost        ] -> Cost: 21285.00
+  - Strategy [hub         ] -> Cost: 24485.00
+  - Strategy [inverse_size] -> Cost: 22010.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_1.rgg ---
+  - Strategy [size        ] -> Cost: 21742.00
+  - Strategy [cost        ] -> Cost: 21976.00
+  - Strategy [hub         ] -> Cost: 20821.00
+  - Strategy [inverse_size] -> Cost: 21329.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_2.rgg ---
+  - Strategy [size        ] -> Cost: 20952.00
+  - Strategy [cost        ] -> Cost: 21238.00
+  - Strategy [hub         ] -> Cost: 25676.00
+  - Strategy [inverse_size] -> Cost: 22688.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_3.rgg ---
+  - Strategy [size        ] -> Cost: 22339.00
+  - Strategy [cost        ] -> Cost: 20805.00
+  - Strategy [hub         ] -> Cost: 20861.00
+  - Strategy [inverse_size] -> Cost: 22042.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_4.rgg ---
+  - Strategy [size        ] -> Cost: 21304.00
+  - Strategy [cost        ] -> Cost: 21365.00
+  - Strategy [hub         ] -> Cost: 22685.00
+  - Strategy [inverse_size] -> Cost: 20564.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_5.rgg ---
+  - Strategy [size        ] -> Cost: 21987.00
+  - Strategy [cost        ] -> Cost: 21243.00
+  - Strategy [hub         ] -> Cost: 22045.00
+  - Strategy [inverse_size] -> Cost: 21489.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_6.rgg ---
+  - Strategy [size        ] -> Cost: 21829.00
+  - Strategy [cost        ] -> Cost: 20771.00
+  - Strategy [hub         ] -> Cost: 21727.00
+  - Strategy [inverse_size] -> Cost: 20759.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_7.rgg ---
+  - Strategy [size        ] -> Cost: 21502.00
+  - Strategy [cost        ] -> Cost: 21066.00
+  - Strategy [hub         ] -> Cost: 20847.00
+  - Strategy [inverse_size] -> Cost: 19899.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_8.rgg ---
+  - Strategy [size        ] -> Cost: 22696.00
+  - Strategy [cost        ] -> Cost: 21787.00
+  - Strategy [hub         ] -> Cost: 23638.00
+  - Strategy [inverse_size] -> Cost: 22402.00
+
+--- Instance: 5000_r0c14_nw1000_ew10_9.rgg ---
+  - Strategy [size        ] -> Cost: 21717.00
+  - Strategy [cost        ] -> Cost: 21202.00
+  - Strategy [hub         ] -> Cost: 25169.00
+  - Strategy [inverse_size] -> Cost: 22444.00
+
+--- Instance: 5000_r0c14_nw100_ew100_0.rgg ---
+  - Strategy [size        ] -> Cost: 141447.00
+  - Strategy [cost        ] -> Cost: 136339.00
+  - Strategy [hub         ] -> Cost: 135100.00
+  - Strategy [inverse_size] -> Cost: 134382.00
+
+--- Instance: 5000_r0c14_nw100_ew100_1.rgg ---
+  - Strategy [size        ] -> Cost: 139917.00
+  - Strategy [cost        ] -> Cost: 142196.00
+  - Strategy [hub         ] -> Cost: 138178.00
+  - Strategy [inverse_size] -> Cost: 141170.00
+
+--- Instance: 5000_r0c14_nw100_ew100_2.rgg ---
+  - Strategy [size        ] -> Cost: 134810.00
+  - Strategy [cost        ] -> Cost: 134802.00
+  - Strategy [hub         ] -> Cost: 137674.00
+  - Strategy [inverse_size] -> Cost: 139505.00
+
+--- Instance: 5000_r0c14_nw100_ew100_3.rgg ---
+  - Strategy [size        ] -> Cost: 138697.00
+  - Strategy [cost        ] -> Cost: 136645.00
+  - Strategy [hub         ] -> Cost: 142222.00
+  - Strategy [inverse_size] -> Cost: 136468.00
+
+--- Instance: 5000_r0c14_nw100_ew100_4.rgg ---
+  - Strategy [size        ] -> Cost: 140492.00
+  - Strategy [cost        ] -> Cost: 137441.00
+  - Strategy [hub         ] -> Cost: 139099.00
+  - Strategy [inverse_size] -> Cost: 136577.00
+
+--- Instance: 5000_r0c14_nw100_ew100_5.rgg ---
+  - Strategy [size        ] -> Cost: 138270.00
+  - Strategy [cost        ] -> Cost: 135506.00
+  - Strategy [hub         ] -> Cost: 138801.00
+  - Strategy [inverse_size] -> Cost: 137855.00
+
+--- Instance: 5000_r0c14_nw100_ew100_6.rgg ---
+  - Strategy [size        ] -> Cost: 136647.00
+  - Strategy [cost        ] -> Cost: 139503.00
+  - Strategy [hub         ] -> Cost: 136449.00
+  - Strategy [inverse_size] -> Cost: 139097.00
+
+--- Instance: 5000_r0c14_nw100_ew100_7.rgg ---
+  - Strategy [size        ] -> Cost: 137867.00
+  - Strategy [cost        ] -> Cost: 137959.00
+  - Strategy [hub         ] -> Cost: 138149.00
+  - Strategy [inverse_size] -> Cost: 138966.00
+
+--- Instance: 5000_r0c14_nw100_ew100_8.rgg ---
+  - Strategy [size        ] -> Cost: 142582.00
+  - Strategy [cost        ] -> Cost: 140339.00
+  - Strategy [hub         ] -> Cost: 140555.00
+  - Strategy [inverse_size] -> Cost: 138743.00
+
+--- Instance: 5000_r0c14_nw100_ew100_9.rgg ---
+  - Strategy [size        ] -> Cost: 136749.00
+  - Strategy [cost        ] -> Cost: 137926.00
+  - Strategy [hub         ] -> Cost: 137393.00
+  - Strategy [inverse_size] -> Cost: 141641.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_0.rgg ---
+  - Strategy [size        ] -> Cost: 1385746.00
+  - Strategy [cost        ] -> Cost: 1334070.00
+  - Strategy [hub         ] -> Cost: 1353749.00
+  - Strategy [inverse_size] -> Cost: 1386725.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_1.rgg ---
+  - Strategy [size        ] -> Cost: 1358962.00
+  - Strategy [cost        ] -> Cost: 1328106.00
+  - Strategy [hub         ] -> Cost: 1333919.00
+  - Strategy [inverse_size] -> Cost: 1336039.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_2.rgg ---
+  - Strategy [size        ] -> Cost: 1341315.00
+  - Strategy [cost        ] -> Cost: 1356898.00
+  - Strategy [hub         ] -> Cost: 1331136.00
+  - Strategy [inverse_size] -> Cost: 1341461.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_3.rgg ---
+  - Strategy [size        ] -> Cost: 1349276.00
+  - Strategy [cost        ] -> Cost: 1324329.00
+  - Strategy [hub         ] -> Cost: 1350078.00
+  - Strategy [inverse_size] -> Cost: 1313830.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_4.rgg ---
+  - Strategy [size        ] -> Cost: 1357495.00
+  - Strategy [cost        ] -> Cost: 1341149.00
+  - Strategy [hub         ] -> Cost: 1354536.00
+  - Strategy [inverse_size] -> Cost: 1335840.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_5.rgg ---
+  - Strategy [size        ] -> Cost: 1332284.00
+  - Strategy [cost        ] -> Cost: 1364461.00
+  - Strategy [hub         ] -> Cost: 1376937.00
+  - Strategy [inverse_size] -> Cost: 1359553.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_6.rgg ---
+  - Strategy [size        ] -> Cost: 1374302.00
+  - Strategy [cost        ] -> Cost: 1378235.00
+  - Strategy [hub         ] -> Cost: 1353711.00
+  - Strategy [inverse_size] -> Cost: 1348731.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_7.rgg ---
+  - Strategy [size        ] -> Cost: 1356678.00
+  - Strategy [cost        ] -> Cost: 1345460.00
+  - Strategy [hub         ] -> Cost: 1281332.00
+  - Strategy [inverse_size] -> Cost: 1312673.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_8.rgg ---
+  - Strategy [size        ] -> Cost: 1359571.00
+  - Strategy [cost        ] -> Cost: 1339590.00
+  - Strategy [hub         ] -> Cost: 1342124.00
+  - Strategy [inverse_size] -> Cost: 1315694.00
+
+--- Instance: 5000_r0c14_nw10_ew1000_9.rgg ---
+  - Strategy [size        ] -> Cost: 1381531.00
+  - Strategy [cost        ] -> Cost: 1309947.00
+  - Strategy [hub         ] -> Cost: 1348800.00
+  - Strategy [inverse_size] -> Cost: 1358859.00

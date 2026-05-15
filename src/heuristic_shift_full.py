@@ -4,17 +4,16 @@ Acts as a deterministic multi-start diversification mechanism by applying
 4 geometric offsets to the spatial decomposition grid to overcome the Grid Dilemma.
 """
 
-from argparse import ArgumentParser
 import os
-import math
-from time import perf_counter
-from itertools import combinations
+import time
+import argparse
 import networkx as nx
-
-from utils import calc_initial_solution_cost
+import math
+from itertools import combinations
+from utils import calc_initial_solution_cost_fast
 
 def read_instance_with_pos(file_path):
-    """Reads the instance file including physical 2D coordinates."""
+    """Reads instance file including the POSITIONS block at the end."""
     G = nx.Graph()
     with open(file_path, 'r') as f:
         lines = [line.strip() for line in f.readlines() if line.strip()]
@@ -44,118 +43,78 @@ def read_instance_with_pos(file_path):
             
     return G
 
-def get_shifted_cell(pos, cell_size, offset_x=0.0, offset_y=0.0):
-    """Returns the grid cell coordinates for a given position with spatial offsets."""
-    x, y = pos
-    return (int((x + offset_x) / cell_size), int((y + offset_y) / cell_size))
+def get_cell(pos, cell_size, offset_x=0, offset_y=0):
+    """Calculates cell coordinates with a given spatial offset."""
+    return (int((pos[0] - offset_x) // cell_size), int((pos[1] - offset_y) // cell_size))
 
-def run_phase1_shifted(G, cell_size, offset_x, offset_y):
-    """Executes Phase 1 (Spatial Decomposition) independently on a specific shifted grid environment."""
-    cells = {}
-    for v in G.nodes():
-        cx, cy = get_shifted_cell(G.nodes[v]['pos'], cell_size, offset_x, offset_y)
-        if (cx, cy) not in cells:
-            cells[(cx, cy)] = []
-        cells[(cx, cy)].append(v)
-        
+def greedy_set_cover(candidates, uncovered, G):
+    """Greedy selection for dominating set within a grid cell."""
     S = set()
-    uncovered = set(G.nodes())
-    forbidden_nodes = set()
-    
-    # Process cells in descending order of node density
-    sorted_cells = sorted(cells.keys(), key=lambda c: len(cells[c]), reverse=True)
-
-    for cell_id in sorted_cells:
-        candidates = [v for v in cells[cell_id] if v not in forbidden_nodes]
-        if not candidates:
-            continue
-            
-        best_node = None
-        best_score = -1.0
-        best_fallback_node = None
-        best_fallback_score = -1.0
+    while uncovered:
+        best_cand = None
+        best_ratio = float('inf')
+        best_covers = set()
         
-        for v in candidates:
-            cost = G.nodes[v]['weight']
-            benefit_out = 0
-            benefit_fallback = 0 
-            
-            for u in G.neighbors(v):
-                if u in uncovered:
-                    cost += G[v][u]['weight']
-                    u_cell = get_shifted_cell(G.nodes[u]['pos'], cell_size, offset_x, offset_y)
-                    
-                    alt_edges = [G[u][t]['weight'] for t in G.neighbors(u) if t != v and t in uncovered]
-                    min_alt = min(alt_edges) if alt_edges else 0
-                    
-                    # Core Logic: Only reward cross-boundary domination
-                    if u_cell != cell_id:
-                        benefit_out += G.nodes[u]['weight'] + min_alt
-                    
-                    benefit_fallback += G.nodes[u]['weight'] + min_alt
-            
-            score = benefit_out / cost if cost > 0 else 0
-            fallback_score = benefit_fallback / cost if cost > 0 else 0
-            
-            if score > best_score:
-                best_score = score
-                best_node = v
+        for cand in candidates:
+            covers_new = (set(G.neighbors(cand)) | {cand}) & uncovered
+            if not covers_new:
+                continue
+            ratio = G.nodes[cand]['weight'] / len(covers_new)
+            if ratio < best_ratio:
+                best_ratio = ratio
+                best_cand = cand
+                best_covers = covers_new
                 
-            if fallback_score > best_fallback_score:
-                best_fallback_score = fallback_score
-                best_fallback_node = v
-                
-        selected = best_node if best_score > 0 else best_fallback_node
-        
-        if selected is not None:
-            S.add(selected)
-            uncovered.discard(selected)
-            forbidden_nodes.add(selected)
-            for u in G.neighbors(selected):
-                uncovered.discard(u)
-                forbidden_nodes.add(u)
-
-    # Greedy repair for any remaining blind spots
-    for v in list(uncovered):
-        if v not in forbidden_nodes:
-            S.add(v)
-            uncovered.discard(v)
-            forbidden_nodes.add(v)
-            for u in G.neighbors(v):
-                uncovered.discard(u)
-                forbidden_nodes.add(u)
-                
+        if best_cand is None:
+            break
+        S.add(best_cand)
+        uncovered -= best_covers
     return S
 
-def shift_full_heuristic(G, radius=0.14):
-    """Executes the Shift_Full strategy over 4 grid offsets and returns the global optimum."""
-    start_time = perf_counter()
-    cell_size = radius / math.sqrt(2)
-    
-    offsets = [
-        (0.0, 0.0), 
-        (cell_size / 2, 0.0), 
-        (0.0, cell_size / 2), 
-        (cell_size / 2, cell_size / 2)
-    ]
-    
-    global_best_S = None
-    global_best_cost = float('inf')
-    global_best_incorrect = float('inf')
-    
-    # Execute GB-VNS exhaustively over the 4 geometric grid offsets
-    for ox, oy in offsets:
-        # [Phase 1] Spatial Decomposition & Scoring
-        S_cand = run_phase1_shifted(G, cell_size, ox, oy)
-        _, current_cost, _, _ = calc_initial_solution_cost(S_cand, G)
+def run_phase1_shifted(G, cell_size, offset_x, offset_y):
+    """Initial solution generation for a specific grid offset."""
+    cells = {}
+    for v in G.nodes():
+        cx, cy = get_cell(G.nodes[v]['pos'], cell_size, offset_x, offset_y)
+        cells.setdefault((cx, cy), []).append(v)
         
-        S = S_cand.copy()
-        improved = True
+    S_init = set()
+    for cell_nodes in cells.values():
+        cell_uncovered = set(cell_nodes)
+        S_init.update(greedy_set_cover(cell_nodes, cell_uncovered, G))
+        
+    global_uncovered = set(G.nodes())
+    for v in S_init:
+        global_uncovered.discard(v)
+        global_uncovered -= set(G.neighbors(v))
+        
+    if global_uncovered:
+        S_init.update(greedy_set_cover(G.nodes(), global_uncovered, G))
+        
+    return S_init
 
-        # [Phase 2] Geometrically-Bounded VNS
+def shift_full_heuristic(G, radius=0.14):
+    """
+    Grid Shift-Full Heuristic using 4 spatial offsets.
+    VNS logic perfectly aligned with cross_ls for fair comparison.
+    """
+    start_time = time.time()
+    cell_size = radius / math.sqrt(2)
+    offsets = [(0, 0), (cell_size/2, 0), (0, cell_size/2), (cell_size/2, cell_size/2)]
+    
+    best_overall_cost = float('inf')
+    best_overall_S = set()
+
+    for ox, oy in offsets:
+        S = run_phase1_shifted(G, cell_size, ox, oy)
+        _, current_cost, _, _ = calc_initial_solution_cost_fast(S, G)
+        
+        improved = True
         while improved:
             improved = False
             for v in list(S):
+                if v not in S: continue
+                
                 S_temp = S.copy()
                 S_temp.remove(v)
                 
@@ -164,101 +123,85 @@ def shift_full_heuristic(G, radius=0.14):
                     if u not in S_temp and not any(t in S_temp for t in G.neighbors(u)):
                         uncovered_temp.add(u)
                         
-                best_swap = None
+                if not uncovered_temp:
+                    S = S_temp
+                    _, current_cost, _, _ = calc_initial_solution_cost_fast(S, G)
+                    improved = True
+                    continue
+
+                valid_cands = set()
+                for cand in G.nodes():
+                    if cand not in S_temp and not any(t in S_temp for t in G.neighbors(cand)):
+                        valid_cands.add(cand)
+                        
+                relevant_cands = [c for c in valid_cands if len((set(G.neighbors(c)) | {c}) & uncovered_temp) > 0]
+                
                 best_swap_cost = current_cost
-                
-                if len(uncovered_temp) == 0:
-                    _, new_cost, _, _ = calc_initial_solution_cost(S_temp, G)
-                    if new_cost < best_swap_cost:
-                        best_swap_cost = new_cost
-                        best_swap = set()
-                
-                else:
-                    valid_cands = set()
-                    for cand in G.nodes():
-                        if cand not in S_temp and not any(t in S_temp for t in G.neighbors(cand)):
-                            valid_cands.add(cand)
-                    
-                    relevant_cands = [c for c in valid_cands if len((set(G.neighbors(c)) | {c}) & uncovered_temp) > 0]
-                    
-                    for c1 in relevant_cands:
-                        c1_covers = set(G.neighbors(c1)) | {c1}
-                        if uncovered_temp.issubset(c1_covers): 
-                            S_new = S_temp | {c1}
-                            _, new_cost, _, _ = calc_initial_solution_cost(S_new, G)
-                            if new_cost < best_swap_cost:
-                                best_swap_cost = new_cost
-                                best_swap = {c1}
-                                
-                    if best_swap is None: 
-                        for c1, c2 in combinations(relevant_cands, 2):
-                            if c2 not in G.neighbors(c1): 
-                                combined_covers = set(G.neighbors(c1)) | {c1} | set(G.neighbors(c2)) | {c2}
-                                if uncovered_temp.issubset(combined_covers):
-                                    S_new = S_temp | {c1, c2}
-                                    _, new_cost, _, _ = calc_initial_solution_cost(S_new, G)
-                                    if new_cost < best_swap_cost:
-                                        best_swap_cost = new_cost
-                                        best_swap = {c1, c2}
-                
+                best_swap = None
+
+                # 1-to-1 swap
+                for cand in relevant_cands:
+                    combined_covers = set(G.neighbors(cand)) | {cand}
+                    if uncovered_temp.issubset(combined_covers):
+                        S_new = S_temp | {cand}
+                        _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
+                        if new_cost < best_swap_cost:
+                            best_swap_cost = new_cost
+                            best_swap = {cand}
+
+                # 1-to-2 swap
+                if best_swap is None:
+                    for c1, c2 in combinations(relevant_cands, 2):
+                        if c2 not in G.neighbors(c1):
+                            combined_covers = set(G.neighbors(c1)) | {c1} | set(G.neighbors(c2)) | {c2}
+                            if uncovered_temp.issubset(combined_covers):
+                                S_new = S_temp | {c1, c2}
+                                _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
+                                if new_cost < best_swap_cost:
+                                    best_swap_cost = new_cost
+                                    best_swap = {c1, c2}
+
                 if best_swap is not None:
                     S = S_temp | best_swap
                     current_cost = best_swap_cost
                     improved = True
-                    break
+                    # Do NOT break to outer loop, continue optimizing other nodes
+        
+        if current_cost < best_overall_cost:
+            best_overall_cost = current_cost
+            best_overall_S = S
 
-        # Check if the final optimized result of the current offset is the global best
-        num_incorrect, final_cost, _, _ = calc_initial_solution_cost(S, G)
-        if final_cost < global_best_cost:
-            global_best_cost = final_cost
-            global_best_S = S.copy()
-            global_best_incorrect = num_incorrect
-
-    time_elapsed = perf_counter() - start_time
-    
-    return global_best_S, global_best_incorrect, global_best_cost, time_elapsed
+    time_elapsed = time.time() - start_time
+    num_incorrect, final_cost, _, _ = calc_initial_solution_cost_fast(best_overall_S, G)
+    return best_overall_S, num_incorrect, final_cost, time_elapsed
 
 def solve_all_shift_full(in_dir_path, instances_subset, out_dir_path):
-    out_file_name = f"{instances_subset}_shift_full_results.csv"
-    out_file_path = os.path.join(out_dir_path, out_file_name)
+    """Processes all matching instances and logs results."""
+    out_file_path = os.path.join(out_dir_path, f"{instances_subset}_shift_full_results.csv")
     os.makedirs(out_dir_path, exist_ok=True)
     
-    # Resume capability: write header if file is missing or empty
     if not os.path.exists(out_file_path) or os.path.getsize(out_file_path) == 0:
         with open(out_file_path, 'w') as f:
             f.write("instance,num_incorrect,cost,time\n")
             
-    # Read already processed instances to skip them
     processed = set()
     if os.path.exists(out_file_path):
         with open(out_file_path, 'r') as f:
-            lines = f.readlines()
-            for line in lines[1:]: # Skip header
-                if line.strip():
-                    processed.add(line.split(',')[0].strip())
-    
-    for file_name in sorted(os.listdir(in_dir_path)):
-        if file_name.startswith(instances_subset):
-            if file_name in processed:
-                print(f"[{file_name}] Already processed. Skipping.")
-                continue
-                
-            file_path = os.path.join(in_dir_path, file_name)
-            G = read_instance_with_pos(file_path)
-            
-            _, num_incorrect_nodes, cost, time_elapsed = shift_full_heuristic(G)
-            
-            # Immediately append result to prevent data loss
-            with open(out_file_path, 'a') as f:
-                f.write(f"{file_name},{num_incorrect_nodes},{cost},{time_elapsed:.4f}\n")
-                
-            print(f"[{file_name}] Shift_Full Finished | Cost: {cost} | Time: {time_elapsed:.4f}s")
+            lines = f.readlines()[1:]
+            processed = {line.split(',')[0].strip() for line in lines if line.strip()}
 
-if __name__ == '__main__':
-    parser = ArgumentParser(description="Geometric Shifting Strategy Heuristic (Shift_Full)")
-    parser.add_argument('-i', '--in_dir_path', type=str, required=True, help="Path to input instances")
-    parser.add_argument('-s', '--instances_subset', type=str, required=True, help="Instance prefix to process")
-    parser.add_argument('-o', '--out_dir_path', type=str, required=True, help="Output directory path")
+    for file_name in sorted(os.listdir(in_dir_path)):
+        if file_name.startswith(f"{instances_subset}_") and file_name not in processed:
+            G = read_instance_with_pos(os.path.join(in_dir_path, file_name))
+            _, num_inc, cost, dt = shift_full_heuristic(G)
+            with open(out_file_path, 'a') as f:
+                f.write(f"{file_name},{num_inc},{cost:.4f},{dt:.4f}\n")
+            print(f"[{file_name}] Cost: {cost:.4f}, Time: {dt:.4f}s")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--in_dir_path", required=True)
+    parser.add_argument("-s", "--instances_subset", required=True)
+    parser.add_argument("-o", "--out_dir_path", required=True)
     args = parser.parse_args()
-    
     solve_all_shift_full(args.in_dir_path, args.instances_subset, args.out_dir_path)

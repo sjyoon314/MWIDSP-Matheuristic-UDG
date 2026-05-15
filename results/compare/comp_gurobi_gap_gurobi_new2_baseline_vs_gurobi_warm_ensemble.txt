@@ -1,0 +1,19 @@
+========== Exact Solver Performance: gurobi_new2_baseline vs gurobi_warm_ensemble ==========
+
+[EG (Edge-oriented)]
+  - Record: 6 Wins, 0 Ties, 4 Losses
+  - Avg Best Obj: 112327.7 vs 112146.2 (Reduced by 0.16% (Improved))
+  - Avg MIP Gap : gurobi_new2_baseline 12.49% vs gurobi_warm_ensemble 12.40% (Massive Improvement: -0.09%p)
+  - Avg Time: 1500.1s vs 1500.4s
+
+[NG (Neutral)]
+  - Record: 4 Wins, 0 Ties, 6 Losses
+  - Avg Best Obj: 13367.0 vs 13382.9 (Increased by 0.12% (Degraded))
+  - Avg MIP Gap : gurobi_new2_baseline 9.14% vs gurobi_warm_ensemble 9.34%
+  - Avg Time: 1500.4s vs 1500.4s
+
+[VG (Node-oriented)]
+  - Record: 0 Wins, 0 Ties, 10 Losses
+  - Avg Best Obj: 4758.6 vs 4758.6 (No change (0.00%))
+  - Avg MIP Gap : gurobi_new2_baseline 0.00% vs gurobi_warm_ensemble 0.00%
+  - Avg Time: 0.8s vs 153.0s

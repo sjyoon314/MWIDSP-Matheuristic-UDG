@@ -7,6 +7,7 @@ aggressively fine-tunes the local geometric topology using smart, cost-based rep
 from argparse import ArgumentParser
 import os
 import random
+random.seed(42)
 import math
 from time import perf_counter
 import networkx as nx
@@ -190,7 +191,7 @@ def solve_all_sa_smart(in_dir_path, instances_subset, out_dir_path):
                     processed.add(line.split(',')[0].strip())
     
     target_files = [f for f in sorted(os.listdir(in_dir_path)) 
-                    if f.startswith(instances_subset) and f not in processed]
+                    if f.startswith(f"{instances_subset}_") and f not in processed]
     num_remaining = len(target_files)
     
     if num_remaining > 0:

@@ -74,9 +74,9 @@ def solve_all_baseline(in_dir_path, instances_subset, out_dir_path):
     
     with open(out_file_path, 'w') as f:
         f.write("instance,num_incorrect,cost,time\n")
-        
+
         for file_name in sorted(os.listdir(in_dir_path)):
-            if not file_name.startswith(instances_subset):
+            if file_name.startswith(f"{instances_subset}_"):
                 continue
                 
             file_path = os.path.join(in_dir_path, file_name)

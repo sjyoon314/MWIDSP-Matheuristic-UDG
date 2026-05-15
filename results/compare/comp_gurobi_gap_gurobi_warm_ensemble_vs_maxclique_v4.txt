@@ -1,0 +1,19 @@
+========== Exact Solver Performance: gurobi_warm_ensemble vs maxclique_v4 ==========
+
+[EG (Edge-oriented)]
+  - Record: 6 Wins, 0 Ties, 4 Losses
+  - Avg Best Obj: 112146.2 vs 112148.9 (Increased by 0.00% (Degraded))
+  - Avg MIP Gap : gurobi_warm_ensemble 12.40% vs maxclique_v4 8.83% (Massive Improvement: -3.56%p)
+  - Avg Time: 1500.4s vs 1502.0s
+
+[NG (Neutral)]
+  - Record: 10 Wins, 0 Ties, 0 Losses
+  - Avg Best Obj: 13382.9 vs 13360.6 (Reduced by 0.17% (Improved))
+  - Avg MIP Gap : gurobi_warm_ensemble 9.34% vs maxclique_v4 4.19% (Massive Improvement: -5.16%p)
+  - Avg Time: 1500.4s vs 1478.5s
+
+[VG (Node-oriented)]
+  - Record: 10 Wins, 0 Ties, 0 Losses
+  - Avg Best Obj: 4758.6 vs 4758.6 (No change (0.00%))
+  - Avg MIP Gap : gurobi_warm_ensemble 0.00% vs maxclique_v4 0.00%
+  - Avg Time: 153.0s vs 0.5s

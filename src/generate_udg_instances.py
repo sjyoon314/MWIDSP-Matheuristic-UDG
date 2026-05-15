@@ -1,27 +1,39 @@
 """
 UDG Instance Generator for the MWIDSP.
-Generates random Unit Disk Graphs (UDGs) with 2D spatial coordinates 
-and assigns weights based on the three environments specified in the paper:
-NG (Neutral), VG (Node-oriented), and EG (Edge-oriented).
+Generates random Unit Disk Graphs (UDGs) with 2D spatial coordinates.
+Supports two scalability testing modes:
+1. Fixed Radius (Density Explosion): Increases N while keeping r constant.
+2. Constant Density (Fair Scaling): Increases N while automatically shrinking r to maintain expected degree.
 """
 
 import networkx as nx
 import random
 import os
+import math
 from argparse import ArgumentParser
 
-def generate_udg_files(num_nodes=500, radius=0.14, num_instances=10, out_dir=None):
-    # If out_dir is not explicitly provided, fall back to a default relative path
+def generate_udg_files(num_nodes=500, radius=0.14, num_instances=10, out_dir=None, maintain_density=False):
+
+    if maintain_density:
+        N_base = 500
+        r_base = 0.14
+        # equation: r_new = r_base * sqrt(N_base / N)
+        calculated_radius = r_base * math.sqrt(N_base / num_nodes)
+        radius = round(calculated_radius, 4) 
+        print(f"[*] Constant Density Mode ON: Radius automatically adjusted to r={radius} for N={num_nodes}")
+    else:
+        print(f"[*] Fixed Radius Mode: Radius remains fixed at r={radius} for N={num_nodes}")
+
+
     if out_dir is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        out_dir = os.path.join(script_dir, '..', 'instances', 'my_udg_with_pos')
+        folder_name = 'udg_constant_density' if maintain_density else 'udg_fixed_radius'
+        out_dir = os.path.join(script_dir, '..', 'instances', folder_name)
         
     os.makedirs(out_dir, exist_ok=True)
+    print(f"[*] Output Directory: {out_dir}")
     
     # Three weight schemes specified in the paper
-    # NG (Neutral): Nodes 1~100, Edges 1~100
-    # VG (Node-oriented): Nodes 1~1000, Edges 1~10
-    # EG (Edge-oriented): Nodes 1~10, Edges 1~1000
     schemes = [
         {"type": "NG", "nw_max": 100, "ew_max": 100},
         {"type": "VG", "nw_max": 1000, "ew_max": 10},
@@ -39,8 +51,7 @@ def generate_udg_files(num_nodes=500, radius=0.14, num_instances=10, out_dir=Non
             # 1. Generate a UDG with 2D spatial coordinates
             G = nx.random_geometric_graph(num_nodes, radius)
             
-            # 2. Define filename (e.g., 500_r0c14_nw100_ew100_0.rgg)
-            # Replace decimal point in radius for safe filename formatting (0.14 -> 0c14)
+            # 2. Define filename (e.g., 1000_r0c099_nw100_ew100_0.rgg)
             radius_str = str(radius).replace('.', 'c')
             file_name = f"{num_nodes}_r{radius_str}_nw{nw_max}_ew{ew_max}_{i}.rgg"
             file_path = os.path.join(out_dir, file_name)
@@ -67,23 +78,22 @@ def generate_udg_files(num_nodes=500, radius=0.14, num_instances=10, out_dir=Non
                     x, y = G.nodes[u]['pos']
                     f.write(f"{u}\t{x:.6f}\t{y:.6f}\n")
                     
-            print(f"[{file_name}] Generation complete.")
+            print(f"[{file_name}] Generation complete. (Nodes: {num_nodes}, Edges: {len(edges)})")
 
 if __name__ == "__main__":
-    # Dynamically resolve relative path assuming script is in 'src/'
-    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    DEFAULT_OUT_DIR = os.path.join(SCRIPT_DIR, '..', 'instances', 'my_udg_with_pos')
-    
-    parser = ArgumentParser(description="Generate UDG instances for MWIDSP")
+    parser = ArgumentParser(description="Generate UDG instances for MWIDSP Scalability Tests")
     parser.add_argument('-n', '--num_nodes', type=int, default=500, help="Number of nodes per instance")
-    parser.add_argument('-r', '--radius', type=float, default=0.14, help="Communication radius")
+    parser.add_argument('-r', '--radius', type=float, default=0.14, help="Base communication radius (if not using --maintain_density)")
     parser.add_argument('-i', '--num_instances', type=int, default=10, help="Number of instances per scheme")
-    parser.add_argument('-o', '--out_dir', type=str, default=DEFAULT_OUT_DIR, help="Output directory")
+    parser.add_argument('-o', '--out_dir', type=str, default=None, help="Specific output directory (optional)")
+    parser.add_argument('-d', '--maintain_density', action='store_true', help="Flag to automatically calculate r to maintain expected degree")
+    
     args = parser.parse_args()
     
     generate_udg_files(
         num_nodes=args.num_nodes, 
         radius=args.radius, 
         num_instances=args.num_instances, 
-        out_dir=args.out_dir
+        out_dir=args.out_dir,
+        maintain_density=args.maintain_density
     )

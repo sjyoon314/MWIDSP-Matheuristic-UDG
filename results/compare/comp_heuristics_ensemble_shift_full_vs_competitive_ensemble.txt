@@ -1,0 +1,26 @@
+========== Heuristics Performance Comparison (ensemble_shift_full vs competitive_ensemble) ==========
+
+[EG (Edge-oriented)]
+  - Avg Cost: ensemble_shift_full 125119.3 vs competitive_ensemble 124069.0 (competitive_ensemble Wins)
+  - Record (competitive_ensemble perspective): 7 Wins, 0 Ties, 3 Losses
+  - Cost Diff: Reduced by 0.84% (Improved)
+  - Avg Time: ensemble_shift_full 152.4450s vs competitive_ensemble 121.2349s
+
+[NG (Neutral)]
+  - Avg Cost: ensemble_shift_full 14590.0 vs competitive_ensemble 14628.0 (ensemble_shift_full Wins)
+  - Record (competitive_ensemble perspective): 4 Wins, 0 Ties, 6 Losses
+  - Cost Diff: Increased by 0.26% (Degraded)
+  - Avg Time: ensemble_shift_full 145.8943s vs competitive_ensemble 118.5117s
+
+[VG (Node-oriented)]
+  - Avg Cost: ensemble_shift_full 5006.5 vs competitive_ensemble 5009.1 (ensemble_shift_full Wins)
+  - Record (competitive_ensemble perspective): 3 Wins, 3 Ties, 4 Losses
+  - Cost Diff: Increased by 0.05% (Degraded)
+  - Avg Time: ensemble_shift_full 148.7116s vs competitive_ensemble 120.6176s
+
+[Overall Average]
+  - Avg Cost: ensemble_shift_full 48238.6 vs competitive_ensemble 47902.0
+  - Total Record: 14 Wins, 3 Ties, 13 Losses
+  - Total Cost Diff: Reduced by 0.70% (Improved)
+  - Total Avg Time: ensemble_shift_full 149.0170s vs competitive_ensemble 120.1214s
+=================================================================

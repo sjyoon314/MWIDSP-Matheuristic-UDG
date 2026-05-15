@@ -1,0 +1,214 @@
+
+========================================
+NEW RUN STARTED: constant_density - 1000
+========================================
+
+--- Instance: 1000_r0c099_nw1000_ew10_0.rgg ---
+  - Strategy [size        ] -> Cost: 15309.00
+  - Strategy [cost        ] -> Cost: 15006.00
+  - Strategy [hub         ] -> Cost: 19200.00
+  - Strategy [inverse_size] -> Cost: 16431.00
+  => FINAL WINNER: LP_Rounding (Cost: 9964.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_1.rgg ---
+  - Strategy [size        ] -> Cost: 15668.00
+  - Strategy [cost        ] -> Cost: 15316.00
+  - Strategy [hub         ] -> Cost: 18682.00
+  - Strategy [inverse_size] -> Cost: 16560.00
+  => FINAL WINNER: LP_Rounding (Cost: 9028.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_2.rgg ---
+  - Strategy [size        ] -> Cost: 16736.00
+  - Strategy [cost        ] -> Cost: 16505.00
+  - Strategy [hub         ] -> Cost: 18871.00
+  - Strategy [inverse_size] -> Cost: 17028.00
+  => FINAL WINNER: LP_Rounding (Cost: 10365.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_3.rgg ---
+  - Strategy [size        ] -> Cost: 14271.00
+  - Strategy [cost        ] -> Cost: 14476.00
+  - Strategy [hub         ] -> Cost: 15670.00
+  - Strategy [inverse_size] -> Cost: 18301.00
+  => FINAL WINNER: LP_Rounding (Cost: 10213.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_4.rgg ---
+  - Strategy [size        ] -> Cost: 14105.00
+  - Strategy [cost        ] -> Cost: 16394.00
+  - Strategy [hub         ] -> Cost: 17090.00
+  - Strategy [inverse_size] -> Cost: 14248.00
+  => FINAL WINNER: LP_Rounding (Cost: 9924.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_5.rgg ---
+  - Strategy [size        ] -> Cost: 14350.00
+  - Strategy [cost        ] -> Cost: 17040.00
+  - Strategy [hub         ] -> Cost: 16447.00
+  - Strategy [inverse_size] -> Cost: 15406.00
+  => FINAL WINNER: LP_Rounding (Cost: 9955.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_6.rgg ---
+  - Strategy [size        ] -> Cost: 15827.00
+  - Strategy [cost        ] -> Cost: 15728.00
+  - Strategy [hub         ] -> Cost: 25341.00
+  - Strategy [inverse_size] -> Cost: 19409.00
+  => FINAL WINNER: LP_Rounding (Cost: 9092.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_7.rgg ---
+  - Strategy [size        ] -> Cost: 18209.00
+  - Strategy [cost        ] -> Cost: 16785.00
+  - Strategy [hub         ] -> Cost: 18174.00
+  - Strategy [inverse_size] -> Cost: 17287.00
+  => FINAL WINNER: LP_Rounding (Cost: 9899.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_8.rgg ---
+  - Strategy [size        ] -> Cost: 19069.00
+  - Strategy [cost        ] -> Cost: 16145.00
+  - Strategy [hub         ] -> Cost: 20366.00
+  - Strategy [inverse_size] -> Cost: 16818.00
+  => FINAL WINNER: LP_Rounding (Cost: 8828.00)
+
+--- Instance: 1000_r0c099_nw1000_ew10_9.rgg ---
+  - Strategy [size        ] -> Cost: 16234.00
+  - Strategy [cost        ] -> Cost: 16974.00
+  - Strategy [hub         ] -> Cost: 14889.00
+  - Strategy [inverse_size] -> Cost: 17101.00
+  => FINAL WINNER: LP_Rounding (Cost: 10060.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_0.rgg ---
+  - Strategy [size        ] -> Cost: 30538.00
+  - Strategy [cost        ] -> Cost: 30268.00
+  - Strategy [hub         ] -> Cost: 30860.00
+  - Strategy [inverse_size] -> Cost: 30512.00
+  => FINAL WINNER: Clique_Cost (Cost: 30268.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_1.rgg ---
+  - Strategy [size        ] -> Cost: 28478.00
+  - Strategy [cost        ] -> Cost: 29987.00
+  - Strategy [hub         ] -> Cost: 29792.00
+  - Strategy [inverse_size] -> Cost: 30064.00
+  => FINAL WINNER: Clique_Size (Cost: 28478.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_2.rgg ---
+  - Strategy [size        ] -> Cost: 30063.00
+  - Strategy [cost        ] -> Cost: 30269.00
+  - Strategy [hub         ] -> Cost: 30012.00
+  - Strategy [inverse_size] -> Cost: 30062.00
+  => FINAL WINNER: Clique_Hub (Cost: 30012.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_3.rgg ---
+  - Strategy [size        ] -> Cost: 29163.00
+  - Strategy [cost        ] -> Cost: 29928.00
+  - Strategy [hub         ] -> Cost: 29362.00
+  - Strategy [inverse_size] -> Cost: 28225.00
+  => FINAL WINNER: Clique_Inverse_size (Cost: 28225.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_4.rgg ---
+  - Strategy [size        ] -> Cost: 29915.00
+  - Strategy [cost        ] -> Cost: 30022.00
+  - Strategy [hub         ] -> Cost: 28990.00
+  - Strategy [inverse_size] -> Cost: 30593.00
+  => FINAL WINNER: Clique_Hub (Cost: 28990.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_5.rgg ---
+  - Strategy [size        ] -> Cost: 29651.00
+  - Strategy [cost        ] -> Cost: 30012.00
+  - Strategy [hub         ] -> Cost: 29841.00
+  - Strategy [inverse_size] -> Cost: 29096.00
+  => FINAL WINNER: Clique_Inverse_size (Cost: 29096.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_6.rgg ---
+  - Strategy [size        ] -> Cost: 30320.00
+  - Strategy [cost        ] -> Cost: 29772.00
+  - Strategy [hub         ] -> Cost: 30676.00
+  - Strategy [inverse_size] -> Cost: 30211.00
+  => FINAL WINNER: Clique_Cost (Cost: 29772.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_7.rgg ---
+  - Strategy [size        ] -> Cost: 29853.00
+  - Strategy [cost        ] -> Cost: 30431.00
+  - Strategy [hub         ] -> Cost: 29737.00
+  - Strategy [inverse_size] -> Cost: 30636.00
+  => FINAL WINNER: Clique_Hub (Cost: 29737.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_8.rgg ---
+  - Strategy [size        ] -> Cost: 30381.00
+  - Strategy [cost        ] -> Cost: 30084.00
+  - Strategy [hub         ] -> Cost: 30020.00
+  - Strategy [inverse_size] -> Cost: 30026.00
+  => FINAL WINNER: Clique_Hub (Cost: 30020.00)
+
+--- Instance: 1000_r0c099_nw100_ew100_9.rgg ---
+  - Strategy [size        ] -> Cost: 30838.00
+  - Strategy [cost        ] -> Cost: 29548.00
+  - Strategy [hub         ] -> Cost: 30889.00
+  - Strategy [inverse_size] -> Cost: 30105.00
+  => FINAL WINNER: Clique_Cost (Cost: 29548.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_0.rgg ---
+  - Strategy [size        ] -> Cost: 257245.00
+  - Strategy [cost        ] -> Cost: 255484.00
+  - Strategy [hub         ] -> Cost: 258417.00
+  - Strategy [inverse_size] -> Cost: 259863.00
+  => FINAL WINNER: Clique_Cost (Cost: 255484.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_1.rgg ---
+  - Strategy [size        ] -> Cost: 266204.00
+  - Strategy [cost        ] -> Cost: 258739.00
+  - Strategy [hub         ] -> Cost: 261959.00
+  - Strategy [inverse_size] -> Cost: 267019.00
+  => FINAL WINNER: Clique_Cost (Cost: 258739.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_2.rgg ---
+  - Strategy [size        ] -> Cost: 256744.00
+  - Strategy [cost        ] -> Cost: 254952.00
+  - Strategy [hub         ] -> Cost: 260978.00
+  - Strategy [inverse_size] -> Cost: 249662.00
+  => FINAL WINNER: Clique_Inverse_size (Cost: 249662.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_3.rgg ---
+  - Strategy [size        ] -> Cost: 245410.00
+  - Strategy [cost        ] -> Cost: 250307.00
+  - Strategy [hub         ] -> Cost: 258885.00
+  - Strategy [inverse_size] -> Cost: 254967.00
+  => FINAL WINNER: Clique_Size (Cost: 245410.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_4.rgg ---
+  - Strategy [size        ] -> Cost: 257508.00
+  - Strategy [cost        ] -> Cost: 258893.00
+  - Strategy [hub         ] -> Cost: 254584.00
+  - Strategy [inverse_size] -> Cost: 263731.00
+  => FINAL WINNER: Clique_Hub (Cost: 254584.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_5.rgg ---
+  - Strategy [size        ] -> Cost: 253527.00
+  - Strategy [cost        ] -> Cost: 243253.00
+  - Strategy [hub         ] -> Cost: 261236.00
+  - Strategy [inverse_size] -> Cost: 256827.00
+  => FINAL WINNER: Clique_Cost (Cost: 243253.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_6.rgg ---
+  - Strategy [size        ] -> Cost: 255514.00
+  - Strategy [cost        ] -> Cost: 248574.00
+  - Strategy [hub         ] -> Cost: 244668.00
+  - Strategy [inverse_size] -> Cost: 247654.00
+  => FINAL WINNER: Clique_Hub (Cost: 244668.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_7.rgg ---
+  - Strategy [size        ] -> Cost: 250947.00
+  - Strategy [cost        ] -> Cost: 243019.00
+  - Strategy [hub         ] -> Cost: 248004.00
+  - Strategy [inverse_size] -> Cost: 251527.00
+  => FINAL WINNER: Clique_Cost (Cost: 243019.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_8.rgg ---
+  - Strategy [size        ] -> Cost: 242265.00
+  - Strategy [cost        ] -> Cost: 251088.00
+  - Strategy [hub         ] -> Cost: 247167.00
+  - Strategy [inverse_size] -> Cost: 240976.00
+  => FINAL WINNER: Clique_Inverse_size (Cost: 240976.00)
+
+--- Instance: 1000_r0c099_nw10_ew1000_9.rgg ---
+  - Strategy [size        ] -> Cost: 259644.00
+  - Strategy [cost        ] -> Cost: 255216.00
+  - Strategy [hub         ] -> Cost: 259710.00
+  - Strategy [inverse_size] -> Cost: 264172.00
+  => FINAL WINNER: Clique_Cost (Cost: 255216.00)
