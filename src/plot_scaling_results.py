@@ -13,7 +13,7 @@ def classify_scheme(filename):
 def plot_scaling(scales, results_dir='../results'):
     schemes = ['EG', 'NG', 'VG']
     
-    # 4개의 모델 파일명 매핑 (깔끔해진 이름 기준)
+    # Map the 4 model filenames 
     models = {
         'NEW2 Baseline': '{N}_r0c14_new2_results.csv',
         'NEW2 + Grid Cuts': '{N}_r0c14_grid_cut_results.csv',
@@ -21,18 +21,18 @@ def plot_scaling(scales, results_dir='../results'):
         'Max Clique V4': '{N}_r0c14_maxclique_v4_results.csv'
     }
     
-    # 시각적 구분을 위한 색상과 마커 배정
+    # Assign colors and markers for visual distinction
     colors = {
         'NEW2 Baseline': '#d62728',     # Red
-        'NEW2 + Grid Cuts': '#ff7f0e',  # Orange (새로 추가)
+        'NEW2 + Grid Cuts': '#ff7f0e',  # Orange 
         'Grid Warm-Start': '#1f77b4',   # Blue
         'Max Clique V4': '#2ca02c'      # Green
     }
     markers = {
-        'NEW2 Baseline': 'o',           # 원
-        'NEW2 + Grid Cuts': 'v',        # 역삼각형 (새로 추가)
-        'Grid Warm-Start': 's',         # 사각형
-        'Max Clique V4': '^'            # 정삼각형
+        'NEW2 Baseline': 'o',           # Circle
+        'NEW2 + Grid Cuts': 'v',        # Downward triangle
+        'Grid Warm-Start': 's',         # Square
+        'Max Clique V4': '^'            # Upward triangle
     }
 
     data = []
@@ -51,7 +51,7 @@ def plot_scaling(scales, results_dir='../results'):
                 t = row['total_time']
                 gap = row.get('gap_percent', 0.0) 
                 
-                # 타임아웃 판정 (시간 초과 or 갭 남음)
+                # Determine timeout (exceeded time limit or gap remains)
                 is_timeout = (t >= time_limit - 1.0) or (gap > 0.1)
                 final_time = time_limit if is_timeout else t
                 
@@ -59,7 +59,7 @@ def plot_scaling(scales, results_dir='../results'):
 
     full_df = pd.DataFrame(data)
     if full_df.empty:
-        print("No data found to plot.")
+        print("[Error] No data found to plot.")
         return
 
     fig, axes = plt.subplots(1, 3, figsize=(20, 6))
@@ -76,20 +76,20 @@ def plot_scaling(scales, results_dir='../results'):
             avg_df = m_df.groupby('N').agg({'time': 'mean', 'timeout': 'mean'}).reset_index()
             avg_df['timeout'] = avg_df['timeout'] > 0.5 
             
-            # 전체 선분 연결
+            # Connect all points with a line
             ax.plot(avg_df['N'], avg_df['time'], color=colors[model_name], linewidth=2.5, alpha=0.7, label=model_name)
             
-            # 성공(Solved) 지점 마커
+            # Marker for successful (solved) instances
             solved = avg_df[~avg_df['timeout']]
             if not solved.empty:
                 ax.scatter(solved['N'], solved['time'], color=colors[model_name], marker=markers[model_name], s=120, zorder=5)
             
-            # 붕괴(Timeout) 지점 X 마커
+            # X marker for timeout instances
             timeout = avg_df[avg_df['timeout']]
             if not timeout.empty:
                 ax.scatter(timeout['N'], timeout['time'], color=colors[model_name], marker='X', s=200, zorder=6, edgecolor='black', linewidth=1.5)
 
-        # 3|V| 한계선
+        # 3|V| limit line
         x_vals = np.array(scales)
         ax.plot(x_vals, 3.0 * x_vals, color='black', linestyle='--', linewidth=2, alpha=0.6, label='Time Limit (3|V|)')
 
@@ -109,7 +109,7 @@ def plot_scaling(scales, results_dir='../results'):
     plt.tight_layout(rect=[0, 0, 1, 0.93])
     plot_path = os.path.join(results_dir, 'scaling_comparison_4way_log.png')
     plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"📊 4자 비교 로그 그래프 생성 완료: {plot_path}")
+    print(f"[Success] 4-way comparison log plot saved to: {plot_path}")
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -118,17 +118,3 @@ if __name__ == '__main__':
     
     scales_list = [int(x) for x in args.scales.split(',')]
     plot_scaling(scales_list)
-
-
-
-# 이거 clique 350 보니까 이상치 조금 잡히는 거 같길래, 그걸로 그 그래프 모양이나 평균 시간 고장나면
-# 이거로 함수 바꿔서 이상치 좀 줄여서 하도록. SGM.  그래프 모양 보고.
-#import numpy as np
-
-## SGM 계산 함수 추가 (통상적으로 shift 파라미터는 10을 많이 씁니다)
-#def calc_sgm(series, shift=10.0):
-#    return np.exp(np.mean(np.log(series + shift))) - shift
-
-## 기존 코드 수정
-## avg_df = m_df.groupby('N').agg({'time': 'mean', 'timeout': 'mean'}).reset_index()
-#avg_df = m_df.groupby('N').agg({'time': calc_sgm, 'timeout': 'mean'}).reset_index()

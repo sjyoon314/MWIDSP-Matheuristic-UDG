@@ -1,3 +1,9 @@
+"""
+Cross-boundary Local Search Heuristic for the MWIDSP.
+Builds a single spatial grid and restricts local search strictly to boundary nodes.
+Utilizes an edge-aware sum scoring strategy and deterministic tie-breaking.
+"""
+
 import os
 import time
 import argparse
@@ -38,72 +44,102 @@ def read_instance_with_pos(file_path):
     return G
 
 def get_cell(pos, cell_size):
-    """Calculates grid cell coordinates for a given position."""
+    """Calculates grid cell coordinates using floor division."""
     return (int(pos[0] // cell_size), int(pos[1] // cell_size))
 
-def greedy_set_cover(candidates, uncovered, G):
-    """Standard greedy set cover algorithm based on weight/covers ratio."""
-    S = set()
-    while uncovered:
-        best_cand = None
-        best_ratio = float('inf')
-        best_covers = set()
-        
-        for cand in candidates:
-            covers_new = (set(G.neighbors(cand)) | {cand}) & uncovered
-            if not covers_new:
-                continue
-            ratio = G.nodes[cand]['weight'] / len(covers_new)
-            if ratio < best_ratio:
-                best_ratio = ratio
-                best_cand = cand
-                best_covers = covers_new
-                
-        if best_cand is None:
-            break
-            
-        S.add(best_cand)
-        uncovered -= best_covers
-    return S
-
-def run_phase1_grid(G, radius):
-    """Phase 1: Generates initial solution using geometric grid partitioning."""
+# =====================================================================
+# Phase 1: Edge-Aware Scoring Initialization
+# =====================================================================
+def run_phase1_edge_aware_sum(G, radius):
+    """Spatial Decomposition with cross-boundary edge penalties (sum strategy)."""
     cell_size = radius / math.sqrt(2)
     cells = {}
     for v in G.nodes():
         cx, cy = get_cell(G.nodes[v]['pos'], cell_size)
-        cells.setdefault((cx, cy), []).append(v)
+        if (cx, cy) not in cells:
+            cells[(cx, cy)] = []
+        cells[(cx, cy)].append(v)
         
-    S_init = set()
-    for cell_nodes in cells.values():
-        cell_uncovered = set(cell_nodes)
-        S_cell = greedy_set_cover(cell_nodes, cell_uncovered, G)
-        S_init.update(S_cell)
-        
-    global_uncovered = set(G.nodes())
-    for v in S_init:
-        global_uncovered.discard(v)
-        global_uncovered -= set(G.neighbors(v))
-        
-    if global_uncovered:
-        S_repair = greedy_set_cover(G.nodes(), global_uncovered, G)
-        S_init.update(S_repair)
-        
-    return S_init
-
-def cross_boundary_ls_heuristic(G, radius=0.14):
-    """
-    Cross-boundary Local Search Heuristic.
-    Uses calc_initial_solution_cost_fast for performance evaluation.
-    """
-    start_time = time.time()
+    S = set()
+    uncovered = set(G.nodes())
+    forbidden_nodes = set()
     
-    # 1. Generate initial solution
-    S = run_phase1_grid(G, radius)
+    sorted_cells = sorted(cells.keys(), key=lambda c: len(cells[c]), reverse=True)
+
+    for cell_id in sorted_cells:
+        candidates = [v for v in cells[cell_id] if v not in forbidden_nodes]
+        if not candidates:
+            continue
+            
+        best_node = None
+        best_score = -1.0
+        best_fallback_node = None
+        best_fallback_score = -1.0
+        
+        for v in candidates:
+            cost = G.nodes[v]['weight']
+            benefit_out = 0
+            benefit_fallback = 0 
+            
+            for u in G.neighbors(v):
+                if u in uncovered:
+                    cost += G[v][u]['weight']
+                    u_cell = get_cell(G.nodes[u]['pos'], cell_size)
+                    
+                    alt_edges = [G[u][t]['weight'] for t in G.neighbors(u) if t != v and t in uncovered]
+                    alt_cost = sum(alt_edges) if alt_edges else 0
+                    
+                    if u_cell != cell_id:
+                        benefit_out += G.nodes[u]['weight'] + alt_cost
+                    
+                    benefit_fallback += G.nodes[u]['weight'] + alt_cost
+            
+            score = benefit_out / cost if cost > 0 else 0
+            fallback_score = benefit_fallback / cost if cost > 0 else 0
+            
+            if score > best_score:
+                best_score = score
+                best_node = v
+                
+            if fallback_score > best_fallback_score:
+                best_fallback_score = fallback_score
+                best_fallback_node = v
+                
+        selected = best_node if best_score > 0 else best_fallback_node
+        
+        if selected is not None:
+            S.add(selected)
+            uncovered.discard(selected)
+            forbidden_nodes.add(selected)
+            for u in G.neighbors(selected):
+                uncovered.discard(u)
+                forbidden_nodes.add(u)
+
+    # Greedy repair for any remaining blind spots
+    for v in list(uncovered):
+        if v not in forbidden_nodes:
+            S.add(v)
+            uncovered.discard(v)
+            forbidden_nodes.add(v)
+            for u in G.neighbors(v):
+                uncovered.discard(u)
+                forbidden_nodes.add(u)
+
+    return S
+
+# =====================================================================
+# Phase 2: Local Search
+# =====================================================================
+def cross_boundary_ls_heuristic(G, radius=0.14):
+    """Cross-boundary Local Search executing strictly on boundary nodes with deterministic tie-breaking."""
+    start_time = time.time()
+    cell_size = radius / math.sqrt(2)
+    
+    # 1. Generate initial solution using the fixed edge-aware sum strategy
+    S = run_phase1_edge_aware_sum(G, radius)
     _, current_cost, _, _ = calc_initial_solution_cost_fast(S, G)
     
     # 2. Identify boundary nodes
-    cell_size = radius / math.sqrt(2)
     boundary_nodes = set()
     for v in G.nodes():
         pos_v = G.nodes[v]['pos']
@@ -148,7 +184,9 @@ def cross_boundary_ls_heuristic(G, radius=0.14):
                     
             relevant_cands = [c for c in valid_cands if len((set(G.neighbors(c)) | {c}) & uncovered_temp) > 0]
             
-            best_swap_cost = current_cost
+            old_eff = len(set(G.neighbors(v)) | {v})
+                
+            best_swap_criteria = (current_cost, -old_eff, v)
             best_swap = None
             
             # Evaluate 1-to-1 swaps
@@ -157,8 +195,12 @@ def cross_boundary_ls_heuristic(G, radius=0.14):
                 if uncovered_temp.issubset(combined_covers):
                     S_new = S_temp | {cand}
                     _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
-                    if new_cost < best_swap_cost:
-                        best_swap_cost = new_cost
+                    
+                    efficiency = len(combined_covers)
+                    current_criteria = (new_cost, -efficiency, cand)
+                    
+                    if current_criteria < best_swap_criteria:
+                        best_swap_criteria = current_criteria
                         best_swap = {cand}
                         
             # Evaluate 1-to-2 swaps
@@ -169,14 +211,18 @@ def cross_boundary_ls_heuristic(G, radius=0.14):
                         if uncovered_temp.issubset(combined_covers):
                             S_new = S_temp | {c1, c2}
                             _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
-                            if new_cost < best_swap_cost:
-                                best_swap_cost = new_cost
+                            
+                            efficiency = len(combined_covers)
+                            current_criteria = (new_cost, -efficiency, min(c1, c2))
+                            
+                            if current_criteria < best_swap_criteria:
+                                best_swap_criteria = current_criteria
                                 best_swap = {c1, c2}
                                 
             # Apply best swap found
             if best_swap is not None:
                 S = S_temp | best_swap
-                current_cost = best_swap_cost
+                current_cost = best_swap_criteria[0]
                 
                 for new_node in best_swap:
                     if new_node in boundary_nodes:
@@ -185,8 +231,6 @@ def cross_boundary_ls_heuristic(G, radius=0.14):
                 improved = True
 
     time_elapsed = time.time() - start_time
-    
-    # Final cost calculation
     num_incorrect_nodes, final_cost, _, _ = calc_initial_solution_cost_fast(S, G)
     return S, num_incorrect_nodes, final_cost, time_elapsed
 
@@ -221,13 +265,14 @@ def solve_all_cross_ls(in_dir_path, instances_subset, out_dir_path):
             
             with open(out_file_path, 'a') as f:
                 f.write(f"{file_name},{num_incorrect_nodes},{cost:.4f},{time_elapsed:.4f}\n")
-            print(f"[{file_name}] Cost: {cost:.4f}, Time: {time_elapsed:.4f}s")
+                
+            print(f"[{file_name}] Cost: {cost:.4f} | Time: {time_elapsed:.4f}s")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--in_dir_path", required=True, help="Input directory")
-    parser.add_argument("-s", "--instances_subset", required=True, help="Subset prefix")
-    parser.add_argument("-o", "--out_dir_path", required=True, help="Output directory")
+    parser = argparse.ArgumentParser(description="Cross-boundary Local Search Heuristic")
+    parser.add_argument("-i", "--in_dir_path", required=True, help="Input directory containing instance files")
+    parser.add_argument("-s", "--instances_subset", required=True, help="Prefix of instances to process")
+    parser.add_argument("-o", "--out_dir_path", required=True, help="Output directory for CSV results")
     args = parser.parse_args()
     
     solve_all_cross_ls(args.in_dir_path, args.instances_subset, args.out_dir_path)

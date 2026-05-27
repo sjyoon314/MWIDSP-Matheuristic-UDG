@@ -4,116 +4,144 @@ import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 import numpy as np
 
+def categorize_environment(instance_name):
+    """Categorize environment based on instance name parameters."""
+    name = str(instance_name).lower()
+    if 'nw1000_ew10' in name: return 'VG'
+    elif 'nw100_ew100' in name: return 'NG'
+    elif 'nw10_ew1000' in name: return 'EG'
+    else: return 'UNKNOWN'
+
 def compare_and_plot(results_dir, exp_name, sizes):
-    grid_costs, clique_costs = [], []
-    grid_times, clique_times = [], []
-    valid_sizes = []
+    # Dictionary structure to store data by environment
+    envs = ['EG', 'NG', 'VG']
+    data = {
+        env: {
+            'grid_costs': [], 'clique_costs': [],
+            'grid_times': [], 'clique_times': [],
+            'valid_sizes': []
+        } for env in envs
+    }
 
     print(f"\n==================================================================")
-    print(f"[{exp_name.upper()}] Grid vs Clique Ensemble Comparison")
+    print(f"[{exp_name.upper()}] Grid vs Clique Ensemble by Environment")
     print(f"==================================================================")
-    print(f"{'N':<6} | {'Grid Cost':<12} | {'Clique Cost':<12} | {'Grid Time(s)':<14} | {'Clique Time(s)':<14}")
-    print(f"------------------------------------------------------------------")
 
     for n in sizes:
         grid_file = os.path.join(results_dir, f"{exp_name}_{n}_grid_ensemble_results.csv")
         clique_file = os.path.join(results_dir, f"{exp_name}_{n}_clique_ensemble_results.csv")
 
+        # Fallback for constant_density n=500 (uses fixed_radius files)
         if exp_name == "constant_density" and n == 500:
             g_file1 = os.path.join(results_dir, "fixed_radius_500_grid_ensemble_results.csv")
-            g_file2 = os.path.join(results_dir, "fixed_radius_500__grid_ensemble_results.csv") # 예전 파일명
+            g_file2 = os.path.join(results_dir, "fixed_radius_500__grid_ensemble_results.csv")
             grid_file = g_file1 if os.path.exists(g_file1) else g_file2
             
             c_file1 = os.path.join(results_dir, "fixed_radius_500_clique_ensemble_results.csv")
-            c_file2 = os.path.join(results_dir, "fixed_radius_500__clique_ensemble_results.csv") # 예전 파일명
+            c_file2 = os.path.join(results_dir, "fixed_radius_500__clique_ensemble_results.csv")
             clique_file = c_file1 if os.path.exists(c_file1) else c_file2
             
-        # 두 파일 중 하나라도 없으면 건너뜀
         if not os.path.exists(grid_file) or not os.path.exists(clique_file):
-            print(f"{n:<6} | 데이터 누락 (파일 없음) - 스킵됨")
+            print(f"[Warning] N={n:<5} | Missing data (file not found) - Skipped")
             continue
 
         try:
             df_grid = pd.read_csv(grid_file)
             df_clique = pd.read_csv(clique_file)
 
-            # 컬럼명 공백 제거 (안전장치)
             df_grid.columns = df_grid.columns.str.strip()
             df_clique.columns = df_clique.columns.str.strip()
 
-            avg_grid_cost = df_grid['cost'].mean()
-            avg_clique_cost = df_clique['cost'].mean()
-            avg_grid_time = df_grid['time'].mean()
-            avg_clique_time = df_clique['time'].mean()
+            df_grid['Environment'] = df_grid['instance'].apply(categorize_environment)
+            df_clique['Environment'] = df_clique['instance'].apply(categorize_environment)
 
-            grid_costs.append(avg_grid_cost)
-            clique_costs.append(avg_clique_cost)
-            grid_times.append(avg_grid_time)
-            clique_times.append(avg_clique_time)
-            valid_sizes.append(n)
+            for env in envs:
+                env_grid = df_grid[df_grid['Environment'] == env]
+                env_clique = df_clique[df_clique['Environment'] == env]
 
-            print(f"{n:<6} | {avg_grid_cost:<12.2f} | {avg_clique_cost:<12.2f} | {avg_grid_time:<14.4f} | {avg_clique_time:<14.4f}")
+                if not env_grid.empty and not env_clique.empty:
+                    data[env]['grid_costs'].append(env_grid['cost'].mean())
+                    data[env]['clique_costs'].append(env_clique['cost'].mean())
+                    data[env]['grid_times'].append(env_grid['time'].mean())
+                    data[env]['clique_times'].append(env_clique['time'].mean())
+                    data[env]['valid_sizes'].append(n)
+                    
         except Exception as e:
-            print(f"{n:<6} | 파일 읽기 에러: {e}")
-            
-    print(f"==================================================================\n")
+            print(f"[Error] N={n:<5} | File read error: {e}")
 
-    if not valid_sizes:
-        print("그래프를 그릴 유효한 데이터가 없습니다.")
+    # Plotting configurations
+    colors = {'EG': 'blue', 'NG': 'green', 'VG': 'red'}
+    markers_grid = {'EG': 'o', 'NG': 's', 'VG': '^'}
+    markers_clique = {'EG': 'o', 'NG': 's', 'VG': '^'}
+    linestyles_grid = '-'
+    linestyles_clique = '--'
+
+    has_data = any(len(data[env]['valid_sizes']) > 0 for env in envs)
+    if not has_data:
+        print("[Info] No valid data available to generate plots.")
         return
 
-    # --- 1. Cost 비교 그래프 그리기 ---
-    plt.figure(figsize=(8, 5))
-    plt.plot(valid_sizes, grid_costs, marker='o', linestyle='-', label='Grid Ensemble', color='blue', markersize=8)
-    plt.plot(valid_sizes, clique_costs, marker='s', linestyle='-', label='Clique Ensemble', color='red', markersize=8)
-    plt.title(f'Cost Comparison ({exp_name})', fontsize=14, fontweight='bold')
+    # --- 1. Plot Cost Comparison ---
+    plt.figure(figsize=(10, 6))
+    for env in envs:
+        sz = data[env]['valid_sizes']
+        if not sz: continue
+        
+        plt.plot(sz, data[env]['grid_costs'], marker=markers_grid[env], linestyle=linestyles_grid, 
+                 label=f'{env} Grid', color=colors[env], markersize=8)
+        plt.plot(sz, data[env]['clique_costs'], marker=markers_clique[env], linestyle=linestyles_clique, 
+                 label=f'{env} Clique', color=colors[env], alpha=0.6, markersize=8)
+
+    plt.title(f'Cost Comparison by Environment ({exp_name})', fontsize=14, fontweight='bold')
     plt.xlabel('Number of Nodes (N)', fontsize=12)
     plt.ylabel('Average Cost', fontsize=12)
-    plt.xticks(valid_sizes)  # X축에 우리가 입력한 N 값만 딱 보이게 고정
-    plt.legend(fontsize=12)
+    
+    # Set primary X-axis ticks based on the longest valid_sizes list
+    best_x = max([data[e]['valid_sizes'] for e in envs if data[e]['valid_sizes']], key=len)
+    plt.xticks(best_x)  
+    plt.legend(fontsize=10, bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
     
-    cost_plot_path = os.path.join(results_dir, f"{exp_name}_cost_comparison.png")
+    cost_plot_path = os.path.join(results_dir, f"{exp_name}_cost_env_comparison.png")
     plt.savefig(cost_plot_path, bbox_inches='tight')
-    print(f"✅ Cost 그래프 저장 완료: {cost_plot_path}")
+    print(f"[Success] Cost comparison plot saved to: {cost_plot_path}")
 
-    # --- 2. Time 비교 그래프 그리기 ---
-    plt.figure(figsize=(8, 5))
-    
-    # X축, Y축 모두 로그 스케일로 플로팅
-    plt.loglog(valid_sizes, grid_times, marker='o', linestyle='-', label='Grid Ensemble', color='blue', markersize=8, base=10)
-    plt.loglog(valid_sizes, clique_times, marker='s', linestyle='-', label='Clique Ensemble', color='red', markersize=8, base=10)
-    
-    # [핵심] 실제 시간 복잡도(기울기 k) 계산
-    if len(valid_sizes) > 1:
-        log_n = np.log10(valid_sizes)
-        slope_grid = np.polyfit(log_n, np.log10(grid_times), 1)[0]
-        slope_clique = np.polyfit(log_n, np.log10(clique_times), 1)[0]
+    # --- 2. Plot Time Comparison (Log-Log) ---
+    plt.figure(figsize=(10, 6))
+    for env in envs:
+        sz = data[env]['valid_sizes']
+        if not sz: continue
         
-        # 그래프에 기울기(Empirical O(N^k)) 텍스트 표시
-        plt.text(valid_sizes[-1], grid_times[-1], f' Slope (k) ≈ {slope_grid:.2f}', color='blue', fontsize=12, va='top')
-        plt.text(valid_sizes[-1], clique_times[-1], f' Slope (k) ≈ {slope_clique:.2f}', color='red', fontsize=12, va='bottom')
+        plt.loglog(sz, data[env]['grid_times'], marker=markers_grid[env], linestyle=linestyles_grid, 
+                   label=f'{env} Grid', color=colors[env], markersize=8, base=10)
+        plt.loglog(sz, data[env]['clique_times'], marker=markers_clique[env], linestyle=linestyles_clique, 
+                   label=f'{env} Clique', color=colors[env], alpha=0.6, markersize=8, base=10)
         
-        print(f"👉 [실증적 시간 복잡도] Grid: O(N^{slope_grid:.2f}) / Clique: O(N^{slope_clique:.2f})")
+        # Calculate slope
+        if len(sz) > 1:
+            log_n = np.log10(sz)
+            slope_grid = np.polyfit(log_n, np.log10(data[env]['grid_times']), 1)[0]
+            slope_clique = np.polyfit(log_n, np.log10(data[env]['clique_times']), 1)[0]
+            print(f"[{env}] Slope (k) -> Grid: {slope_grid:.2f} | Clique: {slope_clique:.2f}")
 
-    plt.title(f'Time Complexity (Log-Log Scale) - {exp_name}', fontsize=14, fontweight='bold')
+    plt.title(f'Time Complexity by Environment (Log-Log) - {exp_name}', fontsize=14, fontweight='bold')
     plt.xlabel('Number of Nodes (N) [Log Scale]', fontsize=12)
     plt.ylabel('Average Time (Seconds) [Log Scale]', fontsize=12)
-    
-    # X축 눈금을 우리가 테스트한 N 값으로 명확히 표시
-    plt.xticks(valid_sizes, labels=[str(n) for n in valid_sizes]) 
-    plt.legend(fontsize=12)
+    plt.xticks(best_x, labels=[str(n) for n in best_x]) 
+    plt.legend(fontsize=10, bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.grid(True, which="both", linestyle='--', alpha=0.5)
+    plt.tight_layout()
     
-    time_plot_path = os.path.join(results_dir, f"{exp_name}_time_loglog_comparison.png")
+    time_plot_path = os.path.join(results_dir, f"{exp_name}_time_env_loglog_comparison.png")
     plt.savefig(time_plot_path, bbox_inches='tight')
-    print(f"✅ Log-Log Time 그래프 저장 완료: {time_plot_path}")
+    print(f"[Success] Log-Log Time comparison plot saved to: {time_plot_path}")
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description="Compare Grid vs Clique Ensembles")
-    parser.add_argument('-d', '--results_dir', type=str, required=True, help="결과 CSV가 들어있는 폴더 경로")
-    parser.add_argument('-e', '--exp_name', type=str, required=True, help="실험 이름 (예: fixed_radius 또는 constant_density)")
-    parser.add_argument('-s', '--sizes', nargs='+', type=int, required=True, help="N 사이즈 목록 (예: 500 1000 2000)")
+    parser = ArgumentParser(description="Compare Grid vs Clique Ensembles by Environment")
+    parser.add_argument('-d', '--results_dir', type=str, required=True, help="Directory path containing result CSV files")
+    parser.add_argument('-e', '--exp_name', type=str, required=True, help="Experiment name (e.g., fixed_radius or constant_density)")
+    parser.add_argument('-s', '--sizes', nargs='+', type=int, required=True, help="List of N sizes (e.g., 500 1000 2000)")
     
     args = parser.parse_args()
     compare_and_plot(args.results_dir, args.exp_name, args.sizes)

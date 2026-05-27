@@ -1,0 +1,214 @@
+
+========================================
+NEW RUN STARTED: scaling_test - 5000_r0c14 (Score: edge_aware_sum)
+========================================
+
+--- Instance: 5000_r0c14_nw1000_ew10_0.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 20882.00
+  - Strategy [cost        ] -> Cost: 20882.00
+  - Strategy [hub         ] -> Cost: 20882.00
+  - Strategy [inverse_size] -> Cost: 20882.00
+  => FINAL WINNER: Clique_Size (Cost: 20882.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_1.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 21403.00
+  - Strategy [cost        ] -> Cost: 21403.00
+  - Strategy [hub         ] -> Cost: 21403.00
+  - Strategy [inverse_size] -> Cost: 21403.00
+  => FINAL WINNER: LP_Rounding (Cost: 21270.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_2.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 20594.00
+  - Strategy [cost        ] -> Cost: 20594.00
+  - Strategy [hub         ] -> Cost: 20594.00
+  - Strategy [inverse_size] -> Cost: 20594.00
+  => FINAL WINNER: Clique_Size (Cost: 20594.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_3.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 21522.00
+  - Strategy [cost        ] -> Cost: 21522.00
+  - Strategy [hub         ] -> Cost: 21522.00
+  - Strategy [inverse_size] -> Cost: 21522.00
+  => FINAL WINNER: LP_Rounding (Cost: 21366.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_4.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 21150.00
+  - Strategy [cost        ] -> Cost: 21150.00
+  - Strategy [hub         ] -> Cost: 21150.00
+  - Strategy [inverse_size] -> Cost: 21150.00
+  => FINAL WINNER: Clique_Size (Cost: 21150.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_5.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 20535.00
+  - Strategy [cost        ] -> Cost: 20535.00
+  - Strategy [hub         ] -> Cost: 20535.00
+  - Strategy [inverse_size] -> Cost: 20535.00
+  => FINAL WINNER: Clique_Size (Cost: 20535.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_6.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 20578.00
+  - Strategy [cost        ] -> Cost: 20578.00
+  - Strategy [hub         ] -> Cost: 20578.00
+  - Strategy [inverse_size] -> Cost: 20578.00
+  => FINAL WINNER: Clique_Size (Cost: 20578.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_7.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 20065.00
+  - Strategy [cost        ] -> Cost: 20065.00
+  - Strategy [hub         ] -> Cost: 20065.00
+  - Strategy [inverse_size] -> Cost: 20065.00
+  => FINAL WINNER: Clique_Size (Cost: 20065.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_8.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 21439.00
+  - Strategy [cost        ] -> Cost: 21439.00
+  - Strategy [hub         ] -> Cost: 21439.00
+  - Strategy [inverse_size] -> Cost: 21439.00
+  => FINAL WINNER: LP_Rounding (Cost: 21318.00)
+
+--- Instance: 5000_r0c14_nw1000_ew10_9.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 20454.00
+  - Strategy [cost        ] -> Cost: 20454.00
+  - Strategy [hub         ] -> Cost: 20454.00
+  - Strategy [inverse_size] -> Cost: 20454.00
+  => FINAL WINNER: Clique_Size (Cost: 20454.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_0.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 135644.00
+  - Strategy [cost        ] -> Cost: 135644.00
+  - Strategy [hub         ] -> Cost: 135644.00
+  - Strategy [inverse_size] -> Cost: 135644.00
+  => FINAL WINNER: Clique_Size (Cost: 135644.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_1.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 140125.00
+  - Strategy [cost        ] -> Cost: 140125.00
+  - Strategy [hub         ] -> Cost: 140125.00
+  - Strategy [inverse_size] -> Cost: 140125.00
+  => FINAL WINNER: Clique_Size (Cost: 140125.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_2.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 139154.00
+  - Strategy [cost        ] -> Cost: 139154.00
+  - Strategy [hub         ] -> Cost: 139154.00
+  - Strategy [inverse_size] -> Cost: 139154.00
+  => FINAL WINNER: Clique_Size (Cost: 139154.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_3.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 142504.00
+  - Strategy [cost        ] -> Cost: 142504.00
+  - Strategy [hub         ] -> Cost: 142504.00
+  - Strategy [inverse_size] -> Cost: 142504.00
+  => FINAL WINNER: Clique_Size (Cost: 142504.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_4.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 138158.00
+  - Strategy [cost        ] -> Cost: 138158.00
+  - Strategy [hub         ] -> Cost: 138158.00
+  - Strategy [inverse_size] -> Cost: 138158.00
+  => FINAL WINNER: Clique_Size (Cost: 138158.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_5.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 139056.00
+  - Strategy [cost        ] -> Cost: 139056.00
+  - Strategy [hub         ] -> Cost: 139056.00
+  - Strategy [inverse_size] -> Cost: 139056.00
+  => FINAL WINNER: Clique_Size (Cost: 139056.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_6.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 145403.00
+  - Strategy [cost        ] -> Cost: 145403.00
+  - Strategy [hub         ] -> Cost: 145403.00
+  - Strategy [inverse_size] -> Cost: 145403.00
+  => FINAL WINNER: Clique_Size (Cost: 145403.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_7.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 138197.00
+  - Strategy [cost        ] -> Cost: 138197.00
+  - Strategy [hub         ] -> Cost: 138197.00
+  - Strategy [inverse_size] -> Cost: 138197.00
+  => FINAL WINNER: Clique_Size (Cost: 138197.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_8.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 137002.00
+  - Strategy [cost        ] -> Cost: 137002.00
+  - Strategy [hub         ] -> Cost: 137002.00
+  - Strategy [inverse_size] -> Cost: 137002.00
+  => FINAL WINNER: Clique_Size (Cost: 137002.00)
+
+--- Instance: 5000_r0c14_nw100_ew100_9.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 141355.00
+  - Strategy [cost        ] -> Cost: 141355.00
+  - Strategy [hub         ] -> Cost: 141355.00
+  - Strategy [inverse_size] -> Cost: 141355.00
+  => FINAL WINNER: Clique_Size (Cost: 141355.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_0.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1343862.00
+  - Strategy [cost        ] -> Cost: 1343862.00
+  - Strategy [hub         ] -> Cost: 1343862.00
+  - Strategy [inverse_size] -> Cost: 1343862.00
+  => FINAL WINNER: Clique_Size (Cost: 1343862.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_1.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1337850.00
+  - Strategy [cost        ] -> Cost: 1337850.00
+  - Strategy [hub         ] -> Cost: 1337850.00
+  - Strategy [inverse_size] -> Cost: 1337850.00
+  => FINAL WINNER: Clique_Size (Cost: 1337850.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_2.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1355403.00
+  - Strategy [cost        ] -> Cost: 1355403.00
+  - Strategy [hub         ] -> Cost: 1355403.00
+  - Strategy [inverse_size] -> Cost: 1355403.00
+  => FINAL WINNER: Clique_Size (Cost: 1355403.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_3.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1324239.00
+  - Strategy [cost        ] -> Cost: 1324239.00
+  - Strategy [hub         ] -> Cost: 1324239.00
+  - Strategy [inverse_size] -> Cost: 1324239.00
+  => FINAL WINNER: Clique_Size (Cost: 1324239.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_4.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1359930.00
+  - Strategy [cost        ] -> Cost: 1359930.00
+  - Strategy [hub         ] -> Cost: 1359930.00
+  - Strategy [inverse_size] -> Cost: 1359930.00
+  => FINAL WINNER: Clique_Size (Cost: 1359930.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_5.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1355303.00
+  - Strategy [cost        ] -> Cost: 1355303.00
+  - Strategy [hub         ] -> Cost: 1355303.00
+  - Strategy [inverse_size] -> Cost: 1355303.00
+  => FINAL WINNER: Clique_Size (Cost: 1355303.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_6.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1365794.00
+  - Strategy [cost        ] -> Cost: 1365794.00
+  - Strategy [hub         ] -> Cost: 1365794.00
+  - Strategy [inverse_size] -> Cost: 1365794.00
+  => FINAL WINNER: Clique_Size (Cost: 1365794.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_7.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1365150.00
+  - Strategy [cost        ] -> Cost: 1365150.00
+  - Strategy [hub         ] -> Cost: 1365150.00
+  - Strategy [inverse_size] -> Cost: 1365150.00
+  => FINAL WINNER: Clique_Size (Cost: 1365150.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_8.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1367672.00
+  - Strategy [cost        ] -> Cost: 1367672.00
+  - Strategy [hub         ] -> Cost: 1367672.00
+  - Strategy [inverse_size] -> Cost: 1367672.00
+  => FINAL WINNER: Clique_Size (Cost: 1367672.00)
+
+--- Instance: 5000_r0c14_nw10_ew1000_9.rgg (Score: edge_aware_sum) ---
+  - Strategy [size        ] -> Cost: 1357665.00
+  - Strategy [cost        ] -> Cost: 1357665.00
+  - Strategy [hub         ] -> Cost: 1357665.00
+  - Strategy [inverse_size] -> Cost: 1357665.00
+  => FINAL WINNER: Clique_Size (Cost: 1357665.00)

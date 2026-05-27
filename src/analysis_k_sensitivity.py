@@ -82,7 +82,7 @@ def run_phase1_grid(G, radius=0.14):
         
         for v in candidates:
             cost = G.nodes[v]['weight']
-            # 논문 정당화 논리: 엣지 가중치 배제, 순수 노드 커버만 확인
+            # Core logic: Exclude edge weights, evaluate pure node coverage
             covers_out = 0
             covers_in = 0
             
@@ -92,7 +92,7 @@ def run_phase1_grid(G, radius=0.14):
                     if u_cell != cell_id: covers_out += 1
                     else: covers_in += 1
             
-            # 외부를 커버하면 가산점 (Cross-boundary), 비용으로 나눔
+            # Add bonus for cross-boundary coverage, normalized by cost
             score = (covers_out * 1.5 + covers_in) / cost if cost > 0 else 0
             fallback_score = (covers_in) / cost if cost > 0 else 0
             
@@ -177,8 +177,6 @@ def run_dynamic_vns(G, S_init, k_max):
     start_time = perf_counter()
     S = S_init.copy()
     
-    # calc_initial_solution_cost_fast 가 utils.py에 정의되어 있다고 가정합니다.
-    # 만약 없다면 기존 calc_initial_solution_cost 로 대체하세요.
     _, current_cost, _, _ = calc_initial_solution_cost_fast(S, G) 
     improved = True
     
@@ -257,20 +255,20 @@ def run_batch_sensitivity_analysis(in_dir_path, out_dir_path, init_strategy):
         if env_name is None: continue
             
         file_path = os.path.join(in_dir_path, filename)
-        print(f"\n[Processing {init_strategy.upper()}] {filename} -> {env_name}")
+        print(f"\n[Processing: {init_strategy.upper()}] {filename} -> {env_name}")
         G = read_instance_with_pos(file_path)
         
-        # 1. 초기해 생성 (한 번만 수행하여 공정성 유지)
+        # 1. Generate initial solution (executed once to ensure fairness)
         t_init_start = perf_counter()
         if init_strategy == 'grid':
             S_init = run_phase1_grid(G)
         elif init_strategy == 'clique':
             S_init = run_phase1_clique(G)
         else:
-            raise ValueError("Invalid strategy")
+            raise ValueError("Invalid initialization strategy provided.")
         t_init = perf_counter() - t_init_start
         
-        # 2. 각 k에 대해 VNS 실행
+        # 2. Execute VNS for each k value
         for k in k_values:
             cost, t_vns = run_dynamic_vns(G, S_init, k_max=k)
             t_total = t_init + t_vns
@@ -279,7 +277,7 @@ def run_batch_sensitivity_analysis(in_dir_path, out_dir_path, init_strategy):
             env_results[env_name]["times"][k].append(t_total)
             print(f"  k={k} | Cost: {cost:.2f}, Time: {t_total:.4f}s")
             
-    # 시각화 부분 (기존과 동일하게 유지하되 제목 변경)
+    # --- Visualization ---
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     fig.suptitle(f"Sensitivity Analysis of $k$ (Init: {init_strategy.upper()})", fontsize=16, fontweight='bold')
     
@@ -288,24 +286,24 @@ def run_batch_sensitivity_analysis(in_dir_path, out_dir_path, init_strategy):
     for idx, env_name in enumerate(env_keys):
         results = env_results[env_name]
         
-        # 데이터가 없는 경우 예외 처리
+        # Handle missing data
         if not results["costs"][1]: 
             axes[idx].set_title(f"{env_name}\n(No data)")
             continue
             
-        # 평균 Cost만 계산 (시간 계산 삭제)
+        # Calculate average cost
         avg_costs = [sum(results["costs"][k])/len(results["costs"][k]) for k in k_values]
         
         ax1 = axes[idx]
         
-        # Cost 라인 플롯 (단일 Y축이므로 파란색 강제 지정 해제, 기본 스타일 적용)
+        # Plot objective cost (using default styling)
         ax1.plot(k_values, avg_costs, color='#1f77b4', marker='o', linestyle='-', linewidth=2.5, markersize=8, label='Avg Objective Cost')
         
         ax1.set_xlabel('Maximum Swap Size ($k$)', fontsize=12)
         ax1.set_ylabel('Average Cost', fontsize=12)
         ax1.set_xticks(k_values)
         
-        # 그리드 스타일 깔끔하게 설정
+        # Apply clean grid styling
         ax1.grid(True, which="major", linestyle='-', alpha=0.4)
         ax1.grid(True, which="minor", linestyle=':', alpha=0.2)
         
@@ -318,7 +316,7 @@ def run_batch_sensitivity_analysis(in_dir_path, out_dir_path, init_strategy):
     
     save_path = os.path.join(out_dir_path, f'k_sensitivity_{init_strategy}.png')
     plt.savefig(save_path, dpi=300)
-    print(f"\n[Success] Plot saved to: {save_path}")
+    print(f"\n[Success] Sensitivity plot successfully saved to: {save_path}")
 
 if __name__ == '__main__':
     parser = ArgumentParser()

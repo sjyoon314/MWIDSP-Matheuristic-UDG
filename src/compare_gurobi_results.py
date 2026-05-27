@@ -29,7 +29,7 @@ def format_gap(diff_pct):
         return "No change (0.00%)"
 
 def compare_gurobi_and_plot():
-    # 1. 파일 경로 설정
+    # 1. Set file paths
     file_1 = '../results/500_r0c14_gurobi_new2_baseline_results.csv' 
     file_2 = '../results/500_r0c14_gurobi_warm_ensemble_results.csv'
 
@@ -43,7 +43,7 @@ def compare_gurobi_and_plot():
         df_1 = pd.read_csv(file_1, skipinitialspace=True)
         df_2 = pd.read_csv(file_2, skipinitialspace=True)
     except FileNotFoundError as e:
-        print(f"Error: File not found: {e}")
+        print(f"[Error] File not found: {e}")
         return
 
     df_1.columns = df_1.columns.str.strip()
@@ -59,12 +59,12 @@ def compare_gurobi_and_plot():
     print(f"\n{header}")
     output_lines.append(header)
     
-    tol = 1e-4 # 부동소수점 오차 방지
+    tol = 1e-4 # Tolerance to prevent floating-point errors
 
     for scheme in grouped.index:
         subset = df[df['scheme'] == scheme]
         
-        # [핵심 수정] 새로운 Win/Loss 로직: 1순위 Best Obj -> 2순위 MIP Gap -> 3순위 Time
+        # Core Modification: Win/Loss logic based on 1. Best Obj, 2. MIP Gap, 3. Time
         obj_tie = np.abs(subset['best_obj_2'] - subset['best_obj_1']) < tol
         gap_tie = np.abs(subset['gap_percent_2'] - subset['gap_percent_1']) < tol
         
@@ -90,7 +90,7 @@ def compare_gurobi_and_plot():
         t_2 = grouped.loc[scheme, 'total_time_2']
         
         obj_diff_pct = ((obj_2 - obj_1) / obj_1) * 100 if obj_1 > 0 else 0
-        gap_diff_pct = gap_2 - gap_1 # 갭은 % 단위이므로 절대 %p 차이로 계산
+        gap_diff_pct = gap_2 - gap_1 # Calculate absolute percentage point difference for gaps
         
         scheme_header = f"\n[{scheme}]"
         print(scheme_header)
@@ -99,10 +99,10 @@ def compare_gurobi_and_plot():
         print(f"  - Record ({name2} perspective): {wins} Wins, {ties} Ties, {losses} Losses")
         print(f"  - Avg Best Obj: {name1} {obj_1:.1f} vs {name2} {obj_2:.1f} ({format_gap(obj_diff_pct)})")
         
-        # 갭이 크게 개선된 경우 하이라이트 표시
+        # Highlight significant gap improvements
         gap_str = f"  - Avg MIP Gap : {name1} {gap_1:.2f}% vs {name2} {gap_2:.2f}%"
         if gap_2 < gap_1 - tol:
-            gap_str += f" (Massive Improvement: {gap_diff_pct:.2f}%p)"
+            gap_str += f" (Significant Improvement: {gap_diff_pct:.2f}%p)"
         print(gap_str)
         print(f"  - Avg Time    : {name1} {t_1:.1f}s vs {name2} {t_2:.1f}s")
         
@@ -113,19 +113,18 @@ def compare_gurobi_and_plot():
             f"  - Avg Time: {t_1:.1f}s vs {t_2:.1f}s"
         ])
 
-    # 텍스트 저장 로직 생략 (기존 코드와 동일)
     txt_filename = f"comp_gurobi_gap_{name1}_vs_{name2}.txt"
     txt_save_path = os.path.join(save_dir, txt_filename)
     with open(txt_save_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(output_lines))
-    print(f"\nText report saved: {txt_save_path}")
+    print(f"\n[Success] Text report saved to: {txt_save_path}")
 
-    # --- Plotting (1) Best Objective (기존과 동일) ---
+    # --- Plotting (1) Best Objective ---
     schemes = grouped.index.tolist()
     x = np.arange(len(schemes))
     width = 0.35
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6)) # 1행 2열로 차트 2개 생성
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6)) # Create 1x2 subplots
 
     rects1 = ax1.bar(x - width/2, grouped['best_obj_1'], width, label=name1, color='#1f77b4')
     rects2 = ax1.bar(x + width/2, grouped['best_obj_2'], width, label=name2, color='#ff7f0e')
@@ -135,7 +134,7 @@ def compare_gurobi_and_plot():
     ax1.set_xticklabels(schemes)
     ax1.legend()
 
-    # --- Plotting (2) MIP Gap (핵심 차트) ---
+    # --- Plotting (2) MIP Gap (Core Chart) ---
     rects3 = ax2.bar(x - width/2, grouped['gap_percent_1'], width, label=name1, color='#d62728')
     rects4 = ax2.bar(x + width/2, grouped['gap_percent_2'], width, label=name2, color='#2ca02c')
     ax2.set_ylabel('Average MIP Gap (%)')
@@ -162,7 +161,7 @@ def compare_gurobi_and_plot():
     img_filename = f"comp_gurobi_gap_{name1}_vs_{name2}.png"
     img_save_path = os.path.join(save_dir, img_filename)
     plt.savefig(img_save_path, dpi=300)
-    print(f"Chart saved: {img_save_path}")
+    print(f"[Success] Comparison chart saved to: {img_save_path}")
 
 if __name__ == '__main__':
     compare_gurobi_and_plot()

@@ -2,6 +2,7 @@
 Competitive Matheuristic Ensemble for the MWIDSP.
 Concurrently executes a geometric multi-start engine (Shift_Full) and 
 a continuous relaxation engine (LP_Rounding), returning the Pareto-efficient winner.
+Retains multiple scoring strategies for ablation studies.
 """
 
 import os
@@ -49,12 +50,77 @@ def read_instance_with_pos(file_path):
     return G
 
 def get_shifted_cell(pos, cell_size, offset_x=0.0, offset_y=0.0):
-    """Assigns a node to a 2D grid cell based on spatial offsets."""
-    x, y = pos
-    return (int((x + offset_x) / cell_size), int((y + offset_y) / cell_size))
+    """Calculates cell coordinates with a given spatial offset using floor division."""
+    return (int((pos[0] - offset_x) // cell_size), int((pos[1] - offset_y) // cell_size))
 
-def run_phase1_shifted(G, cell_size, offset_x, offset_y):
-    """Phase 1: Spatial Decomposition and Cross-Boundary Scoring construction."""
+# =====================================================================
+# Phase 1: Node-Weight Scoring (node_only)
+# =====================================================================
+def greedy_set_cover(candidates, uncovered, G, forbidden_nodes):
+    """Greedy selection ensuring both domination and independence."""
+    S = set()
+    while uncovered:
+        best_cand = None
+        best_ratio = float('inf')
+        best_covers = set()
+        
+        valid_cands = [c for c in candidates if c not in forbidden_nodes]
+        if not valid_cands:
+            break
+            
+        for cand in valid_cands:
+            covers_new = (set(G.neighbors(cand)) | {cand}) & uncovered
+            if not covers_new:
+                continue
+            ratio = G.nodes[cand]['weight'] / len(covers_new)
+            if ratio < best_ratio:
+                best_ratio = ratio
+                best_cand = cand
+                best_covers = covers_new
+                
+        if best_cand is None:
+            break
+            
+        S.add(best_cand)
+        uncovered -= best_covers
+        
+        forbidden_nodes.add(best_cand)
+        for u in G.neighbors(best_cand):
+            forbidden_nodes.add(u)
+            
+    return S
+
+def run_phase1_shifted_node_only(G, cell_size, offset_x, offset_y):
+    """Initial solution generation focusing solely on node weights."""
+    cells = {}
+    for v in G.nodes():
+        cx, cy = get_shifted_cell(G.nodes[v]['pos'], cell_size, offset_x, offset_y)
+        cells.setdefault((cx, cy), []).append(v)
+        
+    S_init = set()
+    global_forbidden = set() 
+    
+    for cell_nodes in cells.values():
+        cell_uncovered = set(cell_nodes)
+        S_cell = greedy_set_cover(cell_nodes, cell_uncovered, G, global_forbidden)
+        S_init.update(S_cell)
+        
+    global_uncovered = set(G.nodes())
+    for v in S_init:
+        global_uncovered.discard(v)
+        global_uncovered -= set(G.neighbors(v))
+        
+    if global_uncovered:
+        S_repair = greedy_set_cover(G.nodes(), global_uncovered, G, global_forbidden)
+        S_init.update(S_repair)
+        
+    return S_init
+
+# =====================================================================
+# Phase 1: Edge-Aware Scoring (edge_aware_min/sum)
+# =====================================================================
+def run_phase1_shifted_edge_aware(G, cell_size, offset_x, offset_y, score_type):
+    """Initial solution generation incorporating cross-boundary edge penalties."""
     cells = {}
     for v in G.nodes():
         cx, cy = get_shifted_cell(G.nodes[v]['pos'], cell_size, offset_x, offset_y)
@@ -66,7 +132,6 @@ def run_phase1_shifted(G, cell_size, offset_x, offset_y):
     uncovered = set(G.nodes())
     forbidden_nodes = set()
     
-    # Sort cells by node density
     sorted_cells = sorted(cells.keys(), key=lambda c: len(cells[c]), reverse=True)
 
     for cell_id in sorted_cells:
@@ -90,12 +155,18 @@ def run_phase1_shifted(G, cell_size, offset_x, offset_y):
                     u_cell = get_shifted_cell(G.nodes[u]['pos'], cell_size, offset_x, offset_y)
                     
                     alt_edges = [G[u][t]['weight'] for t in G.neighbors(u) if t != v and t in uncovered]
-                    min_alt = min(alt_edges) if alt_edges else 0
+                    
+                    if score_type == 'edge_aware_min':
+                        alt_cost = min(alt_edges) if alt_edges else 0
+                    elif score_type == 'edge_aware_sum':
+                        alt_cost = sum(alt_edges) if alt_edges else 0
+                    else:
+                        alt_cost = 0
                     
                     if u_cell != cell_id:
-                        benefit_out += G.nodes[u]['weight'] + min_alt
+                        benefit_out += G.nodes[u]['weight'] + alt_cost
                     
-                    benefit_fallback += G.nodes[u]['weight'] + min_alt
+                    benefit_fallback += G.nodes[u]['weight'] + alt_cost
             
             score = benefit_out / cost if cost > 0 else 0
             fallback_score = benefit_fallback / cost if cost > 0 else 0
@@ -118,7 +189,6 @@ def run_phase1_shifted(G, cell_size, offset_x, offset_y):
                 uncovered.discard(u)
                 forbidden_nodes.add(u)
 
-    # Greedy repair for any remaining isolated nodes
     for v in list(uncovered):
         if v not in forbidden_nodes:
             S.add(v)
@@ -130,8 +200,11 @@ def run_phase1_shifted(G, cell_size, offset_x, offset_y):
                 
     return S
 
-def shift_full_heuristic(G, radius=0.14):
-    """Executes the Shift_Full algorithm (Phase 1 + GB-VNS Phase 2) over 4 grid offsets."""
+# =====================================================================
+# ENGINE 1: SHIFT-FULL (GEOMETRIC MULTI-START)
+# =====================================================================
+def shift_full_heuristic(G, radius=0.14, score_type='node_only'):
+    """Executes the Shift_Full algorithm (Phase 1 + VNS Phase 2) over 4 grid offsets."""
     start_time = perf_counter()
     cell_size = radius / math.sqrt(2)
     
@@ -147,16 +220,21 @@ def shift_full_heuristic(G, radius=0.14):
     global_best_incorrect = float('inf')
     
     for ox, oy in offsets:
-        S_cand = run_phase1_shifted(G, cell_size, ox, oy)
+        if score_type in ['edge_aware_min', 'edge_aware_sum']:
+            S_cand = run_phase1_shifted_edge_aware(G, cell_size, ox, oy, score_type)
+        else:
+            S_cand = run_phase1_shifted_node_only(G, cell_size, ox, oy)
+            
         _, current_cost, _, _ = calc_initial_solution_cost_fast(S_cand, G)
         
         S = S_cand.copy()
         improved = True
 
-        # Phase 2: Geometrically-Bounded VNS (Truncated at k=2)
         while improved:
             improved = False
             for v in list(S):
+                if v not in S: continue
+                
                 S_temp = S.copy()
                 S_temp.remove(v)
                 
@@ -165,51 +243,58 @@ def shift_full_heuristic(G, radius=0.14):
                     if u not in S_temp and not any(t in S_temp for t in G.neighbors(u)):
                         uncovered_temp.add(u)
                         
+                if not uncovered_temp:
+                    S = S_temp
+                    _, current_cost, _, _ = calc_initial_solution_cost_fast(S, G)
+                    improved = True
+                    continue
+
+                valid_cands = set()
+                for cand in G.nodes():
+                    if cand not in S_temp and not any(t in S_temp for t in G.neighbors(cand)):
+                        valid_cands.add(cand)
+                
+                relevant_cands = [c for c in valid_cands if len((set(G.neighbors(c)) | {c}) & uncovered_temp) > 0]
+                
+                old_eff = len(set(G.neighbors(v)) | {v})
+                
+                best_swap_criteria = (current_cost, -old_eff, v)
                 best_swap = None
-                best_swap_cost = current_cost
-                
-                # 1-to-0 Exchange (Redundancy Removal)
-                if len(uncovered_temp) == 0:
-                    _, new_cost, _, _ = calc_initial_solution_cost_fast(S_temp, G)
-                    if new_cost < best_swap_cost:
-                        best_swap_cost = new_cost
-                        best_swap = set()
-                
-                else:
-                    valid_cands = set()
-                    for cand in G.nodes():
-                        if cand not in S_temp and not any(t in S_temp for t in G.neighbors(cand)):
-                            valid_cands.add(cand)
-                    
-                    relevant_cands = [c for c in valid_cands if len((set(G.neighbors(c)) | {c}) & uncovered_temp) > 0]
-                    
-                    # 1-to-1 Exchange
-                    for c1 in relevant_cands:
-                        c1_covers = set(G.neighbors(c1)) | {c1}
-                        if uncovered_temp.issubset(c1_covers): 
-                            S_new = S_temp | {c1}
-                            _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
-                            if new_cost < best_swap_cost:
-                                best_swap_cost = new_cost
-                                best_swap = {c1}
+
+                # 1-to-1 swap
+                for c1 in relevant_cands:
+                    c1_covers = set(G.neighbors(c1)) | {c1}
+                    if uncovered_temp.issubset(c1_covers): 
+                        S_new = S_temp | {c1}
+                        _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
+                        
+                        efficiency = len(c1_covers)
+                        current_criteria = (new_cost, -efficiency, c1)
+                        
+                        if current_criteria < best_swap_criteria:
+                            best_swap_criteria = current_criteria
+                            best_swap = {c1}
+                            
+                # 1-to-2 swap
+                if best_swap is None: 
+                    for c1, c2 in combinations(relevant_cands, 2):
+                        if c2 not in G.neighbors(c1): 
+                            combined_covers = set(G.neighbors(c1)) | {c1} | set(G.neighbors(c2)) | {c2}
+                            if uncovered_temp.issubset(combined_covers):
+                                S_new = S_temp | {c1, c2}
+                                _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
                                 
-                    # 1-to-2 Exchange (Boundary Stitching)
-                    if best_swap is None: 
-                        for c1, c2 in combinations(relevant_cands, 2):
-                            if c2 not in G.neighbors(c1): 
-                                combined_covers = set(G.neighbors(c1)) | {c1} | set(G.neighbors(c2)) | {c2}
-                                if uncovered_temp.issubset(combined_covers):
-                                    S_new = S_temp | {c1, c2}
-                                    _, new_cost, _, _ = calc_initial_solution_cost_fast(S_new, G)
-                                    if new_cost < best_swap_cost:
-                                        best_swap_cost = new_cost
-                                        best_swap = {c1, c2}
+                                efficiency = len(combined_covers)
+                                current_criteria = (new_cost, -efficiency, min(c1, c2))
+                                
+                                if current_criteria < best_swap_criteria:
+                                    best_swap_criteria = current_criteria
+                                    best_swap = {c1, c2}
                 
                 if best_swap is not None:
                     S = S_temp | best_swap
-                    current_cost = best_swap_cost
+                    current_cost = best_swap_criteria[0]
                     improved = True
-                    break
 
         num_incorrect, final_cost, _, _ = calc_initial_solution_cost_fast(S, G)
         if final_cost < global_best_cost:
@@ -220,6 +305,9 @@ def shift_full_heuristic(G, radius=0.14):
     time_elapsed = perf_counter() - start_time
     return global_best_S, global_best_incorrect, global_best_cost, time_elapsed
 
+# =====================================================================
+# ENGINE 2: LP ROUNDING 
+# =====================================================================
 def lp_rounding_heuristic(G, num_rounding_trials=100):
     """LP Relaxation and Randomized Rounding Matheuristic for Node-heavy environments."""
     start_time = perf_counter()
@@ -229,7 +317,6 @@ def lp_rounding_heuristic(G, num_rounding_trials=100):
     env.start()
     m = gp.Model("MWIDSP_Relaxation", env=env)
     
-    # Continuous relaxation: 0 <= x_v <= 1
     x = m.addVars(G.nodes(), vtype=GRB.CONTINUOUS, lb=0.0, ub=1.0, name="x")
     m.setObjective(gp.quicksum(G.nodes[v]['weight'] * x[v] for v in G.nodes()), GRB.MINIMIZE)
     
@@ -252,12 +339,10 @@ def lp_rounding_heuristic(G, num_rounding_trials=100):
     
     for _ in range(num_rounding_trials):
         S = set()
-        # Probabilistic Sampling
         for v in G.nodes():
             if random.random() <= lp_probs[v]:
                 S.add(v)
                 
-        # Independence Correction (Evict higher-cost conflicting nodes)
         S_list = list(S)
         for u in S_list:
             if u in S:
@@ -276,7 +361,6 @@ def lp_rounding_heuristic(G, num_rounding_trials=100):
             
         uncovered = set(G.nodes()) - covered
         
-        # Greedy Domination Repair
         while uncovered:
             best_cand = None
             best_ratio = float('inf')
@@ -315,115 +399,15 @@ def lp_rounding_heuristic(G, num_rounding_trials=100):
     time_elapsed = perf_counter() - start_time
     return best_S, best_incorrect, best_cost, time_elapsed
 
-def lp_rounding_heuristic_pool(G, num_rounding_trials=100, pool_size=5):
-    """Variant of LP_Rounding that maintains a diverse pool of elite solutions for exact solvers."""
-    start_time = perf_counter()
-    
-    env = gp.Env(empty=True)
-    env.setParam('OutputFlag', 0)
-    env.start()
-    m = gp.Model("MWIDSP_Relaxation", env=env)
-    
-    x = m.addVars(G.nodes(), vtype=GRB.CONTINUOUS, lb=0.0, ub=1.0, name="x")
-    m.setObjective(gp.quicksum(G.nodes[v]['weight'] * x[v] for v in G.nodes()), GRB.MINIMIZE)
-    
-    for v in G.nodes():
-        m.addConstr(x[v] + gp.quicksum(x[u] for u in G.neighbors(v)) >= 1.0)
-        
-    for u, v in G.edges():
-        m.addConstr(x[u] + x[v] <= 1.0)
-        
-    m.optimize()
-    
-    if m.status != GRB.OPTIMAL:
-        return set(), 0, float('inf'), perf_counter() - start_time, []
-        
-    lp_probs = {v: x[v].X for v in G.nodes()}
-    solution_pool = []
-    
-    for _ in range(num_rounding_trials):
-        S = set()
-        for v in G.nodes():
-            if random.random() <= lp_probs[v]:
-                S.add(v)
-                
-        S_list = list(S)
-        for u in S_list:
-            if u in S:
-                for v in list(G.neighbors(u)):
-                    if v in S:
-                        if G.nodes[u]['weight'] >= G.nodes[v]['weight']:
-                            S.remove(u)
-                            break
-                        else:
-                            S.remove(v)
-                            
-        covered = set()
-        for v in S:
-            covered.add(v)
-            covered.update(G.neighbors(v))
-            
-        uncovered = set(G.nodes()) - covered
-        
-        while uncovered:
-            best_cand = None
-            best_ratio = float('inf')
-            
-            valid_cands = [v for v in G.nodes() if v not in S and not any(u in S for u in G.neighbors(v))]
-            
-            if not valid_cands:
-                break 
-                
-            for v in valid_cands:
-                covers_new = len((set(G.neighbors(v)) | {v}) & uncovered)
-                if covers_new > 0:
-                    ratio = G.nodes[v]['weight'] / covers_new
-                    if ratio < best_ratio:
-                        best_ratio = ratio
-                        best_cand = v
-                        
-            if best_cand is not None:
-                S.add(best_cand)
-                uncovered -= (set(G.neighbors(best_cand)) | {best_cand})
-            else:
-                break
-                
-        num_incorrect, cost, _, _ = calc_initial_solution_cost_fast(S, G)
-        
-        # Check diversity: only add feasible solutions that are sufficiently distinct (< 80% overlap)
-        if num_incorrect == 0:
-            is_diverse = True
-            for pool_S, _ in solution_pool:
-                intersection = len(S.intersection(pool_S))
-                union = len(S.union(pool_S))
-                if union > 0 and (intersection / union) > 0.8: 
-                    is_diverse = False
-                    break
-                    
-            if is_diverse:
-                solution_pool.append((S.copy(), cost))
-                # Keep top pool_size solutions sorted by cost
-                solution_pool = sorted(solution_pool, key=lambda item: item[1])[:pool_size]
-
-    time_elapsed = perf_counter() - start_time
-    
-    if solution_pool:
-        best_S = solution_pool[0][0]
-        best_cost = solution_pool[0][1]
-        best_incorrect = 0
-    else:
-        best_S = S
-        best_cost = cost
-        best_incorrect = num_incorrect
-
-    return best_S, best_incorrect, best_cost, time_elapsed, [s[0] for s in solution_pool]
-
-def competitive_ensemble_heuristic(G):
+# =====================================================================
+# ENSEMBLE WRAPPER
+# =====================================================================
+def competitive_ensemble_heuristic(G, score_type='node_only'):
     """Executes both algorithms concurrently and returns the Pareto-efficient winner."""
     total_start_time = perf_counter()
     
-# 1. Execute Geometric Engine
-    S_shift, inc_shift, cost_shift, t_shift = shift_full_heuristic(G)
+    # 1. Execute Geometric Engine
+    S_shift, inc_shift, cost_shift, t_shift = shift_full_heuristic(G, score_type=score_type)
     
     # 2. Execute Continuous Relaxation Engine
     S_lp, inc_lp, cost_lp, t_lp = lp_rounding_heuristic(G)
@@ -443,15 +427,21 @@ def competitive_ensemble_heuristic(G):
     total_time = perf_counter() - total_start_time
     return best_S, best_inc, best_cost, total_time, winner
 
-def solve_all_ensemble(in_dir_path, instances_subset, out_dir_path, exp_name):
-    if exp_name in ["", "fixed", "scaling_test"]:
-        out_file_name = f'{instances_subset}_grid_heuristic_results.csv'
+def solve_all_ensemble(in_dir_path, instances_subset, out_dir_path, exp_name, score_type):
+    """Processes instances and logs the winner between geometric and continuous approaches."""
+    if score_type == 'node_only':
+        base_name = "grid_heuristic"
     else:
-        out_file_name = f'{instances_subset}_grid_heuristic_{exp_name}_results.csv'
+        base_name = f"grid_heuristic_{score_type}"
+        
+    if exp_name in ["", "fixed", "scaling_test"]:
+        out_file_name = f'{instances_subset}_{base_name}_results.csv'
+    else:
+        out_file_name = f'{instances_subset}_{base_name}_{exp_name}_results.csv'
+        
     out_file_path = os.path.join(out_dir_path, out_file_name)
     os.makedirs(out_dir_path, exist_ok=True)
     
-    # Resume capability: write header if file is missing or empty
     if not os.path.exists(out_file_path) or os.path.getsize(out_file_path) == 0:
         with open(out_file_path, 'w') as f:
             f.write("instance,num_incorrect,cost,time,winner\n")
@@ -467,18 +457,20 @@ def solve_all_ensemble(in_dir_path, instances_subset, out_dir_path, exp_name):
     for file_name in sorted(os.listdir(in_dir_path)):
         if file_name.startswith(f"{instances_subset}_"):
             if file_name in processed:
-                print(f"[{file_name}] Already processed. Skipping.")
+                score_msg = "Node Only" if score_type == 'node_only' else score_type
+                print(f"[{file_name}] Already processed ({score_msg}). Skipping.")
                 continue
                 
             file_path = os.path.join(in_dir_path, file_name)
             G = read_instance_with_pos(file_path)
             
-            _, num_incorrect_nodes, cost, time_elapsed, winner = competitive_ensemble_heuristic(G)
+            _, num_incorrect_nodes, cost, time_elapsed, winner = competitive_ensemble_heuristic(G, score_type=score_type)
             
             with open(out_file_path, 'a') as f:
                 f.write(f"{file_name},{num_incorrect_nodes},{cost},{time_elapsed:.4f},{winner}\n")
                 
-            print(f"[{file_name}] Ensemble Finished | Cost: {cost} | Time: {time_elapsed:.4f}s | Winner: {winner}")
+            score_msg = "Node Only" if score_type == 'node_only' else score_type
+            print(f"[{file_name}] Score: {score_msg} | Cost: {cost:.4f} | Time: {time_elapsed:.4f}s | Winner: {winner}")
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Competitive Matheuristic Ensemble (Shift_Full + LP_Rounding)")
@@ -486,6 +478,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--instances_subset', type=str, required=True, help="Instance prefix to process")
     parser.add_argument('-o', '--out_dir_path', type=str, required=True, help="Output directory path")
     parser.add_argument('-e', '--exp_name', type=str, required=True, help="Experiment Name")
+    parser.add_argument('--score_type', choices=['node_only', 'edge_aware_min', 'edge_aware_sum'], default='node_only', help="Scoring strategy for Phase 1")
     args = parser.parse_args()
     
-    solve_all_ensemble(args.in_dir_path, args.instances_subset, args.out_dir_path, args.exp_name)
+    solve_all_ensemble(args.in_dir_path, args.instances_subset, args.out_dir_path, args.exp_name, args.score_type)

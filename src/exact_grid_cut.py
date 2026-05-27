@@ -4,10 +4,38 @@ import math
 from argparse import ArgumentParser
 import gurobipy as gp
 from gurobipy import GRB
+import networkx as nx
 
-# 공간 좌표(pos)가 반드시 필요하므로, POSITIONS를 파싱하는 함수를 사용해야 합니다.
-# 만약 utils의 read_instance가 좌표를 읽지 않는다면 read_instance_with_pos 로 변경하세요.
-from utils import read_instance, calc_initial_solution_cost_fast
+def read_instance_with_pos(file_path):
+    """Reads the instance file including physical 2D coordinates."""
+    G = nx.Graph()
+    with open(file_path, 'r') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+        
+    num_nodes, num_edges = map(int, lines[0].split())
+    G.add_nodes_from(range(num_nodes))
+    
+    idx = 1
+    for u in range(num_nodes):
+        G.nodes[u]['weight'] = float(lines[idx])
+        idx += 1
+        
+    for _ in range(num_edges):
+        u, v, w = map(float, lines[idx].split())
+        u, v = int(u), int(v)
+        G.add_edge(u, v, weight=w)
+        idx += 1
+        
+    if idx < len(lines) and lines[idx] == "POSITIONS":
+        idx += 1
+        for _ in range(num_nodes):
+            parts = lines[idx].split()
+            u = int(parts[0])
+            x, y = float(parts[1]), float(parts[2])
+            G.nodes[u]['pos'] = (x, y)
+            idx += 1
+            
+    return G
 
 def extract_weights(G):
     w_node = {u: G.nodes[u]['weight'] for u in G.nodes()}
@@ -59,8 +87,6 @@ def solve_new2_grid_cuts(G, time_limit, radius=0.14):
                 name=f"Cut_{u}_{s_node}"
             )
 
-    # --- [추가된 핵심 로직]: Lightweight Grid Clique Cuts ---
-    # 대각선 길이가 radius 이하가 되도록 셀 크기 설정
     cell_size = radius / math.sqrt(2)
     grid_cells = {}
     
@@ -102,12 +128,11 @@ def solve_all_new2(in_dir_path, instances_subset, out_dir_path):
     out_file_path = os.path.join(out_dir_path, out_file_name)
     os.makedirs(out_dir_path, exist_ok=True)
     
-    # 1. 파일이 없으면 헤더 생성
     if not os.path.exists(out_file_path) or os.path.getsize(out_file_path) == 0:
         with open(out_file_path, 'w') as f:
             f.write("instance,best_obj,lower_bound,gap_percent,total_time\n")     
 
-    # 2. 이미 처리된 인스턴스 기록 읽기 (이어쓰기 로직)
+    # for continue
     processed = set()
     if os.path.exists(out_file_path):
         with open(out_file_path, 'r') as f:
@@ -117,7 +142,6 @@ def solve_all_new2(in_dir_path, instances_subset, out_dir_path):
                     processed.add(line.split(',')[0].strip())
 
     for file_name in sorted(os.listdir(in_dir_path)):
-        # 3. 언더바(_) 강제 추가로 5000 인식 오류 방지
         if not file_name.startswith(f"{instances_subset}_"):
             continue
             
@@ -127,10 +151,8 @@ def solve_all_new2(in_dir_path, instances_subset, out_dir_path):
             
         file_path = os.path.join(in_dir_path, file_name)
         
-        # 주의: utils의 read_instance가 좌표를 읽어와야 합니다.
-        G = read_instance(file_path)
+        G = read_instance_with_pos(file_path)
         
-        # 파일명에서 radius 유추 (예: 200_r0c14 -> 0.14)
         radius = 0.14
         if 'r0c' in file_name:
             try:

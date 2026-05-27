@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 import gurobipy as gp
 from gurobipy import GRB
 
-from utils import read_instance, calc_initial_solution_cost_fast
+from utils import read_instance
 
 def extract_weights(G):
     w_node = {u: G.nodes[u]['weight'] for u in G.nodes()}
@@ -20,7 +20,7 @@ def solve_new2(G, time_limit):
     w_node, w_edge = extract_weights(G)
     
     model = gp.Model("MWIDSP_NEW_2")
-    model.Params.OutputFlag = 1  # 1로 두면 진행상황이 보입니다
+    model.Params.OutputFlag = 1  # log
     model.Params.TimeLimit = time_limit
     
     x = model.addVars(G.nodes(), vtype=GRB.BINARY, name="x")
@@ -74,12 +74,12 @@ def solve_all_new2(in_dir_path, instances_subset, out_dir_path):
     out_file_path = os.path.join(out_dir_path, out_file_name)
     os.makedirs(out_dir_path, exist_ok=True)
     
-    # 1. 파일이 없으면 헤더 생성
+    # 1. Check file existence and write header for appending
     if not os.path.exists(out_file_path) or os.path.getsize(out_file_path) == 0:
         with open(out_file_path, 'w') as f:
             f.write("instance,best_obj,lower_bound,gap_percent,total_time\n")     
 
-    # 2. 이미 처리된 인스턴스 기록 읽기 (이어쓰기 로직)
+    # 2. Extract already processed instances to avoid duplicate work
     processed = set()
     if os.path.exists(out_file_path):
         with open(out_file_path, 'r') as f:
@@ -89,24 +89,25 @@ def solve_all_new2(in_dir_path, instances_subset, out_dir_path):
                     processed.add(line.split(',')[0].strip())
 
     for file_name in sorted(os.listdir(in_dir_path)):
-        # 3. 언더바(_) 강제 추가로 5000 인식 오류 방지
+        # 3. Enforce underscore on prefix to prevent partial matching errors (e.g., 500 vs 5000)
         if not file_name.startswith(f"{instances_subset}_"):
             continue
             
         if file_name in processed:
-            print(f"[{file_name}] Already processed. Skipping.")
+            print(f"[Info] {file_name} already processed. Skipping.")
             continue
             
         file_path = os.path.join(in_dir_path, file_name)
         G = read_instance(file_path)
         
         current_time_limit = 3 * len(G.nodes())
-        print(f"\n[{file_name}] Executing NEW2 Baseline...")
+        print(f"\n[Processing] {file_name} - Executing NEW2 Baseline...")
         best_obj, best_bound, gap, time_elapsed = solve_new2(G, current_time_limit)
             
+        # 4. Append results immediately
         with open(out_file_path, 'a') as f:
             f.write(f"{file_name},{best_obj:.4f},{best_bound:.4f},{gap:.2f},{time_elapsed:.4f}\n")
-        print(f" -> NEW-2 Finished | Obj: {best_obj:.1f} | Bound: {best_bound:.1f} | Gap: {gap:.2f}% | Time: {time_elapsed:.4f}s")
+        print(f"  -> [Success] NEW-2 Finished | Obj: {best_obj:.1f} | Bound: {best_bound:.1f} | Gap: {gap:.2f}% | Time: {time_elapsed:.4f}s")
 
 def main():
     parser = ArgumentParser(description="Exact solver for MWIDSP using the NEW-2 MILP formulation.")

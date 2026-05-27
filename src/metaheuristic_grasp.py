@@ -1,163 +1,496 @@
-"""
-Exploration-centric GRASP (Greedy Randomized Adaptive Search Procedure) Metaheuristic.
-Acts as a computationally intensive baseline by continuously generating diverse 
-initial skeletons using a Restricted Candidate List (RCL) without local search refinement.
-"""
-
 from argparse import ArgumentParser
 import os
 import random
+import math
 from time import perf_counter
 import networkx as nx
 
-from utils import calc_initial_solution_cost
+random.seed(42)
 
-def read_instance_with_pos(file_path):
-    """Reads the instance file including physical 2D coordinates."""
+
+# ============================================================
+# Instance Reader
+# ============================================================
+
+def read_instance(file_path):
+
     G = nx.Graph()
+
     with open(file_path, 'r') as f:
-        lines = [line.strip() for line in f.readlines() if line.strip()]
-        
-    num_nodes, num_edges = map(int, lines[0].split())
-    G.add_nodes_from(range(num_nodes))
-    
+        lines = [line.strip() for line in f if line.strip()]
+
+    n, m = map(int, lines[0].split())
+
+    G.add_nodes_from(range(n))
+
     idx = 1
-    for u in range(num_nodes):
+
+    for u in range(n):
         G.nodes[u]['weight'] = float(lines[idx])
         idx += 1
-        
-    for _ in range(num_edges):
+
+    for _ in range(m):
+
         u, v, w = map(float, lines[idx].split())
-        u, v = int(u), int(v)
+
+        u = int(u)
+        v = int(v)
+
         G.add_edge(u, v, weight=w)
+
         idx += 1
-        
-    if idx < len(lines) and lines[idx] == "POSITIONS":
-        idx += 1
-        for _ in range(num_nodes):
-            parts = lines[idx].split()
-            u = int(parts[0])
-            x, y = float(parts[1]), float(parts[2])
-            G.nodes[u]['pos'] = (x, y)
-            idx += 1
-            
+
     return G
 
-def grasp_baseline_heuristic(G, time_limit=1500.0, rcl_size=3):
-    """Executes GRASP within the time limit and returns the best solution found."""
-    start_time = perf_counter()
-    
-    best_overall_S = set()
-    best_overall_cost = float('inf')
-    best_overall_incorrect = 0
-    iteration_count = 0
-    
-    # Cache optimization: Precompute sum of incident edge weights for baseline speed
-    static_edge_weights = {u: sum(G[u][v]['weight'] for v in G[u]) for u in G.nodes}
-    
-    while perf_counter() - start_time < time_limit:
-        iteration_count += 1
-        S = set()
-        G_copy = G.copy()
-        
-        dyn_edge_cache = static_edge_weights.copy()
-        
-        while len(G_copy.nodes) > 0:
-            candidates_scores = []
-            
-            for v in G_copy.nodes:
-                uv_w = 0
-                other_w = 0
-                nw_sum = 0
-                neighbors_v = list(G_copy[v])
-                
-                for u in neighbors_v:
-                    nw_sum += G_copy.nodes[u]['weight']
-                    uv_w += G_copy[u][v]['weight']
-                    other_w += dyn_edge_cache[u] - G_copy[u][v]['weight']
-                    
-                cost = G_copy.nodes[v]['weight'] + uv_w
-                benefit = nw_sum + other_w
-                score = benefit / cost if cost > 0 else 0
-                
-                candidates_scores.append((score, v))
-            
-            # Sort candidates descending by score
-            candidates_scores.sort(key=lambda x: x[0], reverse=True)
-            
-            # [GRASP Core] Randomly pick from the Restricted Candidate List (RCL)
-            top_k = candidates_scores[:rcl_size]
-            selected_node = random.choice(top_k)[1]
-            
-            S.add(selected_node)
-            
-            # Dynamically update the graph and cache
-            neighbors_of_selected = list(G_copy[selected_node])
-            for v in neighbors_of_selected:
-                for u in G_copy[v]:
-                    dyn_edge_cache[u] -= G_copy[v][u]['weight']
-                G_copy.remove_node(v) 
-                
-            if selected_node in G_copy: 
-                for u in G_copy[selected_node]:
-                    dyn_edge_cache[u] -= G_copy[selected_node][u]['weight']
-                G_copy.remove_node(selected_node)
-        
-        # Evaluate the constructed solution at the end of each iteration
-        num_incorrect, current_cost, _, _ = calc_initial_solution_cost(S, G)
-        
-        # Update the global best
-        if current_cost < best_overall_cost:
-            best_overall_cost = current_cost
-            best_overall_S = S
-            best_overall_incorrect = num_incorrect
-            
-    time_elapsed = perf_counter() - start_time
-    
-    return best_overall_S, best_overall_incorrect, best_overall_cost, time_elapsed, iteration_count
 
-def solve_all_grasp(in_dir_path, instances_subset, out_dir_path):
-    out_file_name = f"{instances_subset}_grasp_baseline_1500s_results.csv" 
-    out_file_path = os.path.join(out_dir_path, out_file_name)
-    os.makedirs(out_dir_path, exist_ok=True)
-    
-    # Resume capability: write header if file is missing or empty
-    if not os.path.exists(out_file_path) or os.path.getsize(out_file_path) == 0:
-        with open(out_file_path, 'w') as f:
-            f.write("instance,num_incorrect,cost,time,iterations\n")
-            
-    # Read already processed instances to skip them
-    processed = set()
-    if os.path.exists(out_file_path):
-        with open(out_file_path, 'r') as f:
-            lines = f.readlines()
-            for line in lines[1:]: # Skip header
-                if line.strip():
-                    processed.add(line.split(',')[0].strip())
+# ============================================================
+# Utilities
+# ============================================================
 
-    for file_name in sorted(os.listdir(in_dir_path)):
-        if file_name.startswith(f"{instances_subset}_"):
-            if file_name in processed:
-                print(f"[{file_name}] Already processed. Skipping.")
+def build_weight_tables(G):
+
+    w_node = {
+        u: G.nodes[u]['weight']
+        for u in G.nodes()
+    }
+
+    w_edge = {}
+
+    for u, v in G.edges():
+
+        w = G[u][v]['weight']
+
+        w_edge[(u, v)] = w
+        w_edge[(v, u)] = w
+
+    return w_node, w_edge
+
+
+def is_feasible(S, G):
+
+    # independence
+    for u in S:
+        for v in G.neighbors(u):
+            if v in S:
+                return False
+
+    # domination
+    for u in G.nodes():
+
+        if u in S:
+            continue
+
+        dominated = False
+
+        for v in G.neighbors(u):
+            if v in S:
+                dominated = True
+                break
+
+        if not dominated:
+            return False
+
+    return True
+
+
+def calc_objective(S, G, w_node, w_edge):
+
+    total = 0.0
+
+    # node cost
+    for u in S:
+        total += w_node[u]
+
+    # assignment edge cost
+    for u in G.nodes():
+
+        if u in S:
+            continue
+
+        dominators = [
+            v for v in G.neighbors(u)
+            if v in S
+        ]
+
+        if not dominators:
+            return float('inf')
+
+        total += min(
+            w_edge[(u, v)]
+            for v in dominators
+        )
+
+    return total
+
+
+# ============================================================
+# Construction Phase
+# ============================================================
+
+def greedy_randomized_construction(
+    G,
+    w_node,
+    w_edge,
+    alpha=0.3
+):
+
+    nodes = list(G.nodes())
+
+    uncovered = set(nodes)
+
+    S = set()
+
+    adj = {
+        u: list(G.neighbors(u))
+        for u in nodes
+    }
+
+    while uncovered:
+
+        candidate_scores = []
+
+        best_score = -float('inf')
+        worst_score = float('inf')
+
+        for v in uncovered:
+
+            # independence guaranteed
+            if any(u in S for u in adj[v]):
                 continue
-                
-            file_path = os.path.join(in_dir_path, file_name)
-            G = read_instance_with_pos(file_path)
-            
-            # Execute GRASP with a rigid 1,500s limit
-            _, num_incorrect_nodes, cost, total_time, iters = grasp_baseline_heuristic(G, time_limit=1500.0, rcl_size=3)
-            
-            # Immediately append result to prevent data loss
-            with open(out_file_path, 'a') as f:
-                f.write(f"{file_name},{num_incorrect_nodes},{cost},{total_time:.2f},{iters}\n")
-                
-            print(f"[{file_name}] Saved | Cost: {cost} | Time: {total_time:.2f}s | Iterations: {iters}")
+
+            newly_covered = set([v])
+
+            for u in adj[v]:
+                if u in uncovered:
+                    newly_covered.add(u)
+
+            # better marginal estimation
+            node_cost = w_node[v]
+
+            edge_gain = 0.0
+
+            for u in newly_covered:
+
+                if u == v:
+                    continue
+
+                edge_gain += w_edge[(u, v)]
+
+            estimated_cost = node_cost + edge_gain
+
+            score = (
+                len(newly_covered)
+                /
+                (estimated_cost + 1e-9)
+            )
+
+            candidate_scores.append((score, v))
+
+            best_score = max(best_score, score)
+            worst_score = min(worst_score, score)
+
+        # Correct GRASP alpha semantics
+        threshold = best_score - alpha * (
+            best_score - worst_score
+        )
+
+        rcl = [
+            v
+            for score, v in candidate_scores
+            if score >= threshold
+        ]
+
+        if not rcl:
+            rcl = [
+                max(candidate_scores)[1]
+            ]
+
+        selected = random.choice(rcl)
+
+        S.add(selected)
+
+        uncovered.discard(selected)
+
+        for u in adj[selected]:
+            uncovered.discard(u)
+
+    return S
+
+
+# ============================================================
+# Local Search
+# ============================================================
+
+def remove_redundant_nodes(S, G):
+
+    improved = True
+
+    while improved:
+
+        improved = False
+
+        for u in list(S):
+
+            candidate = S - {u}
+
+            if is_feasible(candidate, G):
+                S = candidate
+                improved = True
+
+    return S
+
+
+def swap_search(
+    S,
+    G,
+    w_node,
+    w_edge
+):
+
+    current_cost = calc_objective(
+        S,
+        G,
+        w_node,
+        w_edge
+    )
+
+    improved = True
+
+    nodes = list(G.nodes())
+
+    while improved:
+
+        improved = False
+
+        outside = list(set(nodes) - S)
+
+        random.shuffle(outside)
+
+        for out_node in outside:
+
+            neighbors_in_S = [
+                u for u in G.neighbors(out_node)
+                if u in S
+            ]
+
+            random.shuffle(neighbors_in_S)
+
+            for in_node in neighbors_in_S:
+
+                candidate = set(S)
+
+                candidate.remove(in_node)
+
+                # independence check
+                if any(
+                    v in candidate
+                    for v in G.neighbors(out_node)
+                ):
+                    continue
+
+                candidate.add(out_node)
+
+                if not is_feasible(candidate, G):
+                    continue
+
+                candidate = remove_redundant_nodes(
+                    candidate,
+                    G
+                )
+
+                candidate_cost = calc_objective(
+                    candidate,
+                    G,
+                    w_node,
+                    w_edge
+                )
+
+                if candidate_cost < current_cost:
+
+                    S = candidate
+                    current_cost = candidate_cost
+
+                    improved = True
+
+                    break
+
+            if improved:
+                break
+
+    return S, current_cost
+
+
+# ============================================================
+# GRASP Main
+# ============================================================
+
+def grasp_mwidsp(
+    G,
+    time_limit,
+    alpha=0.3
+):
+
+    start_time = perf_counter()
+
+    w_node, w_edge = build_weight_tables(G)
+
+    best_S = set()
+
+    best_cost = float('inf')
+
+    iterations = 0
+
+    while perf_counter() - start_time < time_limit:
+
+        iterations += 1
+
+        # ----------------------------------------------------
+        # Construction
+        # ----------------------------------------------------
+
+        S = greedy_randomized_construction(
+            G,
+            w_node,
+            w_edge,
+            alpha
+        )
+
+        # ----------------------------------------------------
+        # Cleanup
+        # ----------------------------------------------------
+
+        S = remove_redundant_nodes(S, G)
+
+        # ----------------------------------------------------
+        # Local Search
+        # ----------------------------------------------------
+
+        S, cost = swap_search(
+            S,
+            G,
+            w_node,
+            w_edge
+        )
+
+        # ----------------------------------------------------
+        # Global Best
+        # ----------------------------------------------------
+
+        if cost < best_cost:
+
+            best_cost = cost
+            best_S = set(S)
+
+    elapsed = perf_counter() - start_time
+
+    return (
+        best_S,
+        best_cost,
+        elapsed,
+        iterations
+    )
+
+
+# ============================================================
+# Batch Solver
+# ============================================================
+
+def solve_all_grasp(
+    in_dir_path,
+    subset,
+    out_dir_path
+):
+
+    os.makedirs(out_dir_path, exist_ok=True)
+
+    out_file = os.path.join(
+        out_dir_path,
+        f"{subset}_grasp_results.csv"
+    )
+
+    if not os.path.exists(out_file):
+
+        with open(out_file, 'w') as f:
+            f.write(
+                "instance,cost,time,iterations\n"
+            )
+
+    target_files = [
+
+        f for f in sorted(os.listdir(in_dir_path))
+
+        if f.startswith(f"{subset}_")
+
+    ]
+
+    for file_name in target_files:
+
+        print(f"\n[{file_name}] Processing...")
+
+        path = os.path.join(
+            in_dir_path,
+            file_name
+        )
+
+        G = read_instance(path)
+
+        time_limit = 3.0 * len(G.nodes())
+
+        _, cost, elapsed, iters = grasp_mwidsp(
+            G,
+            time_limit=time_limit,
+            alpha=0.3
+        )
+
+        with open(out_file, 'a') as f:
+
+            f.write(
+                f"{file_name},"
+                f"{cost:.4f},"
+                f"{elapsed:.4f},"
+                f"{iters}\n"
+            )
+
+        print(
+            f" -> Cost: {cost:.2f} | "
+            f"Time: {elapsed:.2f}s | "
+            f"Iters: {iters}"
+        )
+
+
+# ============================================================
+# Main
+# ============================================================
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description="GRASP Metaheuristic Benchmark (1500s limit)")
-    parser.add_argument('-i', '--in_dir_path', type=str, required=True, help="Path to input instances")
-    parser.add_argument('-s', '--instances_subset', type=str, required=True, help="Instance prefix to process")
-    parser.add_argument('-o', '--out_dir_path', type=str, required=True, help="Output directory path")
+
+    parser = ArgumentParser()
+
+    parser.add_argument(
+        '-i',
+        '--in_dir_path',
+        type=str,
+        required=True
+    )
+
+    parser.add_argument(
+        '-s',
+        '--instances_subset',
+        type=str,
+        required=True
+    )
+
+    parser.add_argument(
+        '-o',
+        '--out_dir_path',
+        type=str,
+        required=True
+    )
+
     args = parser.parse_args()
-    
-    solve_all_grasp(args.in_dir_path, args.instances_subset, args.out_dir_path)
+
+    solve_all_grasp(
+        args.in_dir_path,
+        args.instances_subset,
+        args.out_dir_path
+    )

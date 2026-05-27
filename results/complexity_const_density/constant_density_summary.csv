@@ -1,0 +1,25 @@
+N,Algorithm,Score,Environment,Time,Cost
+500,Grid Ensemble,node_only,EG (Edge-Heavy),0.7360300000000001,124475.6
+500,Grid Ensemble,node_only,NG (Neutral),0.7765000000000001,14480.6
+500,Grid Ensemble,node_only,VG (Node-Heavy),0.7472399999999999,5002.0
+500,Clique Ensemble,edge_aware_min,EG (Edge-Heavy),1.73051,126219.6
+500,Clique Ensemble,edge_aware_min,NG (Neutral),1.62616,14691.7
+500,Clique Ensemble,edge_aware_min,VG (Node-Heavy),1.82878,5002.0
+1000,Grid Ensemble,node_only,EG (Edge-Heavy),3.2845999999999997,251087.0
+1000,Grid Ensemble,node_only,NG (Neutral),3.2994299999999996,29019.8
+1000,Grid Ensemble,node_only,VG (Node-Heavy),2.82319,9732.8
+1000,Clique Ensemble,edge_aware_min,EG (Edge-Heavy),7.4382,250447.7
+1000,Clique Ensemble,edge_aware_min,NG (Neutral),7.140799999999999,29277.4
+1000,Clique Ensemble,edge_aware_min,VG (Node-Heavy),7.163209999999999,9732.8
+2000,Grid Ensemble,node_only,EG (Edge-Heavy),13.81165,504917.0
+2000,Grid Ensemble,node_only,NG (Neutral),12.90933,57781.0
+2000,Grid Ensemble,node_only,VG (Node-Heavy),10.19978,19215.1
+2000,Clique Ensemble,edge_aware_min,EG (Edge-Heavy),31.28732,505684.7
+2000,Clique Ensemble,edge_aware_min,NG (Neutral),31.208950000000005,58614.1
+2000,Clique Ensemble,edge_aware_min,VG (Node-Heavy),30.932139999999997,19215.1
+5000,Grid Ensemble,node_only,EG (Edge-Heavy),109.9793,1268603.4
+5000,Grid Ensemble,node_only,NG (Neutral),103.34354999999998,144947.0
+5000,Grid Ensemble,node_only,VG (Node-Heavy),84.35706,51262.0
+5000,Clique Ensemble,edge_aware_min,EG (Edge-Heavy),318.44114,1269562.0
+5000,Clique Ensemble,edge_aware_min,NG (Neutral),332.60949,144407.4
+5000,Clique Ensemble,edge_aware_min,VG (Node-Heavy),274.40831,51262.0

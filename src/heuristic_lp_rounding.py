@@ -13,7 +13,7 @@ import networkx as nx
 import gurobipy as gp
 from gurobipy import GRB
 
-from utils import calc_initial_solution_cost
+from utils import calc_initial_solution_cost_fast
 
 def read_instance(file_path):
     """Reads the instance file (spatial coordinates are ignored in this purely topological solver)."""
@@ -129,7 +129,7 @@ def lp_rounding_heuristic(G, num_rounding_trials=100):
                 break
                 
         # [Step D] Cost Evaluation
-        num_incorrect, cost, _, _ = calc_initial_solution_cost(S, G)
+        num_incorrect, cost, _, _ = calc_initial_solution_cost_fast(S, G)
         
         if num_incorrect == 0 and cost < best_cost:
             best_cost = cost
